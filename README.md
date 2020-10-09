@@ -16,9 +16,9 @@ This kit is based on https://github.com/kamranahmedse/developer-roadmap. It incl
   - [Ultimate Go](https://github.com/hoanhan101/ultimate-go)
 - Rust
   - [Learning Rust Website](https://learning-rust.github.io/)
- - C
+- C
   - [Learning C)(https://github.com/h0mbre/Learning-C)
- - C++
+- C++
   - [Resources for C++ Beginners](https://gist.github.com/johnmcfarlane/1b2d9c83e4d3f700ba61e2df4077c613)
   - [Learn Cpp](https://github.com/Codecademy/learn-cpp)
 ### Understand different OS Concepts
