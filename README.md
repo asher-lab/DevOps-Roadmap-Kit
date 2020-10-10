@@ -17,7 +17,7 @@ This kit is based on https://github.com/kamranahmedse/developer-roadmap. It incl
 - Rust
   - [Learning Rust Website](https://learning-rust.github.io/)
 - C
-  - [Learning C)(https://github.com/h0mbre/Learning-C)
+  - [Learning C](https://github.com/h0mbre/Learning-C)
 - C++
   - [Resources for C++ Beginners](https://gist.github.com/johnmcfarlane/1b2d9c83e4d3f700ba61e2df4077c613)
   - [Learn Cpp](https://github.com/Codecademy/learn-cpp)
