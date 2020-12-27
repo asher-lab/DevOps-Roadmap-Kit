@@ -84,9 +84,50 @@ cp.stdout
 Subprocess are helpful if you want to run an application inside an application
 
 ----
+Creating Command-Line Tools
+The simplest way to invoke a Python script on the command line is to
+invoke it using Python. When you construct a Python script, any
+statements at the top level (not nested in code blocks) run whenever
+the script is invoked or imported. If you have a function you want to
+run whenever your code is loaded, you can invoke it at the top level:
 
+```
+def say_it():
+ greeting = 'Hello'
+ target = 'Joe'
+ message = f'{greeting} {target}'
+ print(message)
+say_it()
 
+```
+Using ipython
+> import script
+stdout will be hello joe
 
+However when we put
+if __name__ = "__main__"
+into the code, what will happen is, if we import script again using the Ipython shell, it will not now display hello joe since it will only envoke the function once main is called. and to call the main: python3 script.py will be the only way.
+
+To stop the redudant calling of python3 and make it executable type: ```which python3``` on linux ubuntu to determine where your python3 is installed then:
+#!/usr/bin/env python3 add this on top of your code:
+
+```
+#!/usr/bin/env python
+
+def say():
+        greeting = "hello"
+        target = "joe"
+        message = f'{greeting} {target}'
+        print(message)
+
+if __name__ == '__main__':
+        say()
+
+```
+Advantages of making it executable is you can add flag and arguments to your code, not just simple task. More of this below:
+
+----
+i. Using sys.argv
 
 
 
