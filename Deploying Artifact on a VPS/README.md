@@ -1,4 +1,4 @@
-
+# Deploying an Artificat on a VPS 
 
 To setup the project run
 
