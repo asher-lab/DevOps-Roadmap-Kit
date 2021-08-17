@@ -25,15 +25,15 @@ Accessing via IP Address
     # Below command will output : permission denied public key
     ssh asher@ipaddress
 
-     # You need to copy ssh from your root / If you did create authorization
-     via ssh and not password.
+    You need to:
+    PasswordAuthentication yes
+
+    Or have a ssh terminal where you can put your pem keys
+    to be authorized by the VPS
 
 
-     ls -la
-     cd .ssh
-     sudo nano authorized_keys
-     # Create key ( ssh-keygen)
-     ssh-ed25519 key email
+
+     
 
 
 ```
