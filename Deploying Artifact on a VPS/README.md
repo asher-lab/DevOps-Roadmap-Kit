@@ -28,7 +28,9 @@ Run the java jar app
 ```
 
 You will be able to see that TomCat which is a webserver is listening on port 
-7071. Your security groups must allow the incoming traffic from port 7071.
+7071. 
+<br> 1. Your security groups must allow the incoming traffic from port 7071.
+<br> 2. 1 user per 1 running application
 
 How?
 ```
