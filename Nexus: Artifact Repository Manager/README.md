@@ -121,3 +121,13 @@ A component is a high level abstraction of what are we working on. An asset are 
 Trivia: <br>
 Docker handle the component and asset of artifacts, in a sustainable way:<br>
 It can have many docker images / also referred sometimes as components. Usually every components have their specific dependencies (which are assets) inside of every component. However, docker can work by having many components that can share the same asset.
+
+# CleanUp Policies
+
+1. Create a cleanup policy and set the criteria.
+2. Associate it within a repo.
+3. Cleanup are scheduled and can be views in Task Option on the left hand navigation bar.
+
+There are many scripts to be executed and ready to be implemented. It have many different task already built-in on Nexus.<br>
+Some scenario:<br>
+When cleaning up a repo, or components or assets, the file are still in the disk. To fix, one need to run a compress task, or a clean task that will remove the entire content from the blob disk.
