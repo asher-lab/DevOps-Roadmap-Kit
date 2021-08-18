@@ -45,18 +45,18 @@ Perform checks
 
 ```
 # Working with Nexus Repository
- Nexus is  an artificat repository manager where you can host your repositories internally on to your system. Use cases are:
+ Nexus is  an artificat repository manager where you can host your repositories internally on to your system. Use cases are:<br>
  <br> 1. Save bandwidth. When developers are downloading packages, saving the repo once on the system can save egress (outbound traffic) cost.
  <br> 2. Centralize team version control. When multiple teams are working on a single project, then it is useful to have a single endpoint where they can make a pull/wget/curl requests so that the application and packages and dependencies they are working with are all the same. This is very effective in saving time and promotes common language.
 <br>
 Below are the types under Nexus Repository Manager
- ### Repository Types:
- - Proxy, as a remote proxy when conditions are met, this works by having a scheduled job when downloading the latest version or manually. 
- - Host, this hosted all repository internally. This works best for proprietary licenses and products. Hosting repositories not available for public.
- - Group. You can combine multiple repository sources into a single repository with the same format. Provided that they are all both from maaven, pypi, etc. Best for having a single endpoint that your developers can talk to.
+ ### Repository Types:<br>
+ - Proxy, as a remote proxy when conditions are met, this works by having a scheduled job when downloading the latest version or manually. <br>
+ - Host, this hosted all repository internally. This works best for proprietary licenses and products. Hosting repositories not available for public.<br>
+ - Group. You can combine multiple repository sources into a single repository with the same format. Provided that they are all both from maaven, pypi, etc. Best for having a single endpoint that your developers can talk to.<br>
  
  # Deploying/Publishing an artifact into Nexus Repo (Maven, Gradle, etc)
-Best practice is to create a user which has sufficient privileges:
+Best practice is to create a user which has sufficient privileges:<br>
 ### Always remember the least privilege principle.
 1. Create a user with least privilege role.
 2. Edit the build.gradle file to set up authentication and enpoint to Nexus
@@ -101,14 +101,14 @@ CI / CD Pipeline. You can set up a script, a cron job to automate any process ba
 
 # Nexus BlobStore
 
-A binary large object (blob) store **provides object storage for components and assets**. One or many repositores or repository groups can use each blob store. By default, Nexus Repository automatically creates a file blob store named "default" in the directory during installation.
+A binary large object (blob) store **provides object storage for components and assets**. One or many repositores or repository groups can use each blob store. By default, Nexus Repository automatically creates a file blob store named "default" in the directory during installation.<br>
 
 The file to be stored here are:
 1. File. File system level files. File that is hosted directly on the server.
 2. Cloud. Object Storage such as S3.
 
 **Terms**
-Blob Count = Number of blobs that are currently on the system. One can see the lists of those files in sonatypes blobs folder. (e.g. /opt/nexus/sonatypeworks/blobs/content then perform an ls command)
+Blob Count = Number of blobs that are currently on the system. One can see the lists of those files in sonatypes blobs folder. (e.g. /opt/nexus/sonatypeworks/blobs/content then perform an ls command)<br>
 **Important Reminders**
 Blob Store can't be modified and can't be deleted.
 
@@ -119,5 +119,5 @@ You can't change the blobstore of existing repository.
 # Component versus Asset
 A component is a high level abstraction of what are we working on. An asset are files (e.g. jar, md5, py, etc.).<br>
 Trivia: <br>
-Docker handle the component and asset of artifacts, in a sustainable way:
+Docker handle the component and asset of artifacts, in a sustainable way:<br>
 It can have many docker images / also referred sometimes as components. Usually every components have their specific dependencies (which are assets) inside of every component. However, docker can work by having many components that can share the same asset.
