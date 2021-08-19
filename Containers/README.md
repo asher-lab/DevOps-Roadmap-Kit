@@ -110,4 +110,36 @@ The docker engine aka daemon is made up of three (3) main parts: <br>
 2. Docker API =  It employs a REST API that will allow you to interact with the docker server. Some tools can be access using the API.
 3. Docker CLI = It uses the command line that will allow you to send commands via CLI.
 
-# Docker Commands
+# Docker Commands (start, stop, run, ps, pull, exec -it, logs)
+
+```
+# Starting docker:
+sudo systemctl start docker
+sudo service docker start
+# download the redis image
+docker pull redis
+docker images
+# Run redis
+docker run redis
+# minimize screen or perform screen command so it can run on bg
+# You can also run container in a detached mode
+docker run -d redis
+# Restarting the containers
+docker stop <container ID>
+docker start <container ID>
+# Show the status of the containers that are running or not running
+docker ps -a
+```
+
+Running multiple versions of containers: Port Binding
+##### You will see that there are conflicts running on same port. So it is necessary to make a port binder to associate the port of the host to a running docker container. 
+```
+docker ps
+docker kill <container ID> in case you have container running
+docker images
+docker ps -a
+
+# Perform PORT Binding 
+docker run -p5000:6379 -d redis
+docker run -p5001:6379 -d redis:4.0
+```
