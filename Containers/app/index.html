@@ -43,7 +43,7 @@
 </style>
 <script>
     (async function init() {
-        const response = await fetch('http://localhost:3000/get-profile');
+        const response = await fetch('http://34.234.35.40:3000/get-profile');
         console.log("response", response);
         const user = await response.json();
         console.log(JSON.stringify(user));
@@ -65,8 +65,8 @@
             email: document.getElementById('input-email').value, 
             interests: document.getElementById('input-interests').value
         };
-        document.write("hello")
-        const response = await fetch('http://localhost:3000/update-profile', {
+        
+        const response = await fetch('http://34.234.35.40:3000/update-profile', {
             method: "POST",
             headers: {
               'Accept': 'application/json',
@@ -76,7 +76,7 @@
         });
 		
 		
-		document.write("hell111o")
+		
 		
         const jsonResponse = await response.json();
 
