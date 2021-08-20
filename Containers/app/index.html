@@ -1,4 +1,6 @@
 <html lang="en">
+
+
 <style>
     .container {
         margin: 40px auto;
@@ -41,20 +43,25 @@
         font-size: 15px;
     }
 </style>
+
+
+
 <script>
+
     (async function init() {
         const response = await fetch('http://localhost:3000/get-profile');
         console.log("response", response);
         const user = await response.json();
         console.log(JSON.stringify(user));
 
-        document.getElementById('name').textContent = user.name ? user.name : 'Anna Smith';
-        document.getElementById('email').textContent = user.email ? user.email : 'anna.smith@example.com';
-        document.getElementById('interests').textContent = user.interests ? user.interests : 'coding';
+        document.getElementById('name').textContent = user.name ? user.name : 'Asher Manangan';
+        document.getElementById('email').textContent = user.email ? user.email : 'asher.manangan@example.com';
+        document.getElementById('interests').textContent = user.interests ? user.interests : 'streaming';
 
         const cont = document.getElementById('container');
         cont.style.display = 'block';
     })();
+
 
     async function handleUpdateProfileRequest() {
         const contEdit = document.getElementById('container-edit');
@@ -96,7 +103,10 @@
         contEdit.style.display = 'block';
     }
 </script>
+
+
 <body>
+
     <div class='container' id='container'>
         <h1>User profile</h1>
         <img src='profile-picture' alt="user-profile">
@@ -108,6 +118,8 @@
         <hr />
         <button class='button' onclick="updateProfile()">Edit Profile</button>
     </div>
+	
+	
     <div class='container' id='container-edit'>
         <h1>User profile</h1>
         <img src='profile-picture' alt="user-profile">
