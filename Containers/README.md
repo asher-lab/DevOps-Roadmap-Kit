@@ -4,9 +4,9 @@
 ![](https://hackernoon.com/hn-images/0*0pcYOPXE3UflU48N)
 
 “black sperm whale” by  [Sho Hatakeyama](https://unsplash.com/@shohatakeyama?utm_source=medium&utm_medium=referral)  on [Unsplash](https://unsplash.com/?utm_source=medium&utm_medium=referral)
-***On a post from hackernoon.***
+<br>***On a post from hackernoon.***
 
-Installing software is hard. And it has nothing to do with your expertise as a developer. We have all seen our fair share of version clashes, esoteric build failure messages and missing dependency errors each time we embarked upon the task of installing a new software to use. We have spent countless hours copy pasting snippets of code from Stack Overflow onto our terminal and running them with the hope that one of them will magically resolve install issues and make the software run. The result is mostly despair, frustration and loss of productivity.
+*Installing software is hard. And it has nothing to do with your expertise as a developer. We have all seen our fair share of version clashes, esoteric build failure messages and missing dependency errors each time we embarked upon the task of installing a new software to use. We have spent countless hours copy pasting snippets of code from Stack Overflow onto our terminal and running them with the hope that one of them will magically resolve install issues and make the software run. The result is mostly despair, frustration and loss of productivity.*
 <br>
 **Container** is  a packaged application where all the configuration and dependencies are all present into the application. <br>
 **Containerization** is a way of packaging an application where all of the dependencies and configuration files are present in the package. <br>
@@ -169,6 +169,7 @@ The `exec` command is used to interact with already running containers on the Do
 When you run docker exec -it, and try to execute commands such as `ping` and `curl` it won't work, since alpine OS is a lightweight OS with not much of a tools in it.
 
 # Docker Integration with Git and Jenkins Whiteboard
+#### Presented below is a sample workflow of Docker in software development
 ![](https://i.imgur.com/bW3tbO3.png)
 
 1. Download the MongoDB image from the Docker Hub Repo.
@@ -176,4 +177,115 @@ When you run docker exec -it, and try to execute commands such as `ping` and `cu
 3. Integrate and push the commit to Jenkins which will then build the JS APP (this would undergo into different build tests, etc and after it all passed you then,
 4. Build the docker image.
 5. You now have docker image in your computer, and you can publish it either a public repo or private in whatever container registry you choose, it depends on your choosing.
-6. Developer's Environment. Other team members can now work and experiment with your application. They perform two things. Download the mongoDB image on docker and download the JS application you uploaded on a container registry
+6. Developer's Environment. Other team members can now work and experiment with your application. They perform two things. Download the mongoDB image on docker and download the JS application you uploaded on a container registry.
+
+# Docker Integration with Database and Software Development
+
+A. Prepare the resources: JavaScript Application, compose of UI (frontend) index.html and Node (backend) server.js
+```
+# install npm
+nvm install 7.5
+# to install the dependencies on to your system
+npm install
+# to start running the application
+npm server.js
+```
+<br>
+The documentation for MongoDB Express can be found in docker hub: https://hub.docker.com/_/mongo-express
+<br>
+### What you want to achieve is this:
+
+1. Prepare the resources needed:
+```
+# download the images from docker hub
+docker pull mongo
+docker pull mongo-express
+```
+2. Run both the application and connect it within the same isolated docker network (MONGO DB)
+```
+docker network ls
+docker network create mongo-network
+docker network ls
+```
+3. Run both the application and connect it within the same isolated docker network  (MONGO DB)
+```
+docker images
+
+docker run -d -p 27017:27017 \
+-e MONGO_INITDB_ROOT_USERNAME=admin \
+-e MONGO_INITDB_ROOT_PASSWORD=password \
+--name mongodb \
+--net mongo-network \
+mongo
+
+
+```
+4. Perform checks
+```
+docker ps
+docker logs <container ID>
+```
+5. Run both the application and connect it within the same isolated docker network (MONGO EXPRESDS)
+```
+docker run -d -p 8081:8081 \
+-e ME_CONFIG_MONGODB_ADMINUSERNAME=admin \
+-e ME_CONFIG_MONGODB_ADMINPASSWORD=password \
+--net mongo-network \
+--name mongo-express \
+-e ME_CONFIG_MONGODB_SERVER=mongodb \
+mongo-express
+```
+6. Perform checks
+```
+docker ps
+docker logs <container ID>
+```
+7. If you are running in the cloud , you need to set up for your firewall so port 8081 can be opened. You need to put collection aka table in sql. Add `user-account` as a collection. Access it via `ipaddress:8081`
+8. Verify the everything is running
+```
+docker ps
+```
+Then, change some data in the front end
+```
+docker logs <container ID> | tail
+# this would allow a contionous flow of data if connections or requests are been made
+docker logs <container ID> -f 
+```
+
+Always remember to allow port so you can access all of it:
+```
+port 27017
+port 8081
+port 3000
+```
+
+Extra trivia from stackoverflow
+##### # [Does Ubuntu UFW overrides Amazon Ec2's security groups and rules?](https://stackoverflow.com/questions/57436758/does-ubuntu-ufw-overrides-amazon-ec2s-security-groups-and-rules)
+> A firewall like UFW is running at the OS level, while Amazon Security Groups are running at the instance level. Traffic coming into the EC2 would first pass through the SG, and then be evaluated by UFW. Take a scenario where traffic is explicitly allowed to pass through the SG but UFW denies it -- in this case UFW would _sort of_ 'override' the settings in the SG.
+https://javascript.info/fetch <<---- info about fetch
+# Must haves docker command
+List all the docker containers created:
+```
+docker ps -a -q
+```
+To clear containers:
+`docker rm -f $(docker ps -a -q)`
+To clear images:
+`docker rmi -f $(docker images -a -q)`
+
+To clear volumes:
+
+`docker volume rm $(docker volume ls -q)`
+
+To clear networks:
+`docker network rm $(docker network ls | tail -n+2 | awk '{if($2 !~ /bridge|none|host/){ print $1 }}')`
+
+Killing process listening on a specific port
+```
+kill $(lsof -t -i:8080)
+```
+
+
+# On dockerizing the nodejs app
+https://nodejs.org/en/docs/guides/nodejs-docker-webapp/
+You can dockerize the UI + Backend (app/index.html) and (app/server.js) by following the tutorials above.
