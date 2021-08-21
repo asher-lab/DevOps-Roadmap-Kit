@@ -181,6 +181,8 @@ When you run docker exec -it, and try to execute commands such as `ping` and `cu
 
 # Docker Integration with Database and Software Development
 
+## Docker Example1 (without docker compose)
+![](https://i.imgur.com/VgD6P3j.png)
 A. Prepare the resources: JavaScript Application, compose of UI (frontend) index.html and Node (backend) server.js
 ```
 # install npm
@@ -284,8 +286,59 @@ Killing process listening on a specific port
 ```
 kill $(lsof -t -i:8080)
 ```
-
+*Side Note (In regards with 5 hours spent debugging the code)
+1. index.html has embedded localhost that's why it can't connect to MongoDB app.
+2. Fix display on CSS = style.display = 'none' to 'block'.
 
 # On dockerizing the nodejs app
 https://nodejs.org/en/docs/guides/nodejs-docker-webapp/
 You can dockerize the UI + Backend (app/index.html) and (app/server.js) by following the tutorials above.
+
+<br><br>
+
+## Docker Example2 (with docker compose) = running multiple docker containers
+
+Structure of yaml file:
+```
+version: '3' # version of docker compose
+services:
+	mongodb: #name of the container
+		image: mongo #image of the docker container
+		ports:
+		-27017:27017 # ports to be opened # port to be opened HOST:CONTAINER
+		environment:
+		-- MONGO_INITDB_ROOT_USERNAME=admin # environmental variables
+```
+**Docker Compose** helps to put into a single yaml file all the docker commands. When you ain't not specify a network image then a network will be create to you with the prefix on the front of where your yaml file release. 
+
+Run docker compose:
+```
+docker-compose -f docker-compose.yaml up
+```
+docker-compose.yaml should contain the following:
+
+```
+version: '3'
+services:
+  mongodb:
+    image: mongo
+    ports:
+      - 27017:27017
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=admin
+      - MONGO_INITDB_ROOT_PASSWORD=password
+  mongo-express:
+    image: mongo-express
+    ports:
+      - 8081:8081
+    environment:
+      - ME_CONFIG_MONGODB_ADMINUSERNAME=admin
+      - ME_CONFIG_MONGODB_ADMINPASSWORD=password
+      - ME_CONFIG_MONGODB_SERVER=mongodb
+    restart: unless-stopped
+```
+Othe useful parameters:
+```
+	tty: true
+    stdin_open: true
+```
