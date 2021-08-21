@@ -339,6 +339,6 @@ services:
 ```
 Othe useful parameters:
 ```
-	tty: true
-    stdin_open: true
+tty: true
+stdin_open: true
 ```
