@@ -54,11 +54,11 @@ mysql> CREATE table product
 	product_price int null
 )charset=latin1;
 
-INSERT INTO crud_db.product (product_id, product_name, product_price) VALUES (1, 'Product 1', 2000);
-INSERT INTO crud_db.product (product_id, product_name, product_price) VALUES (2, 'Product 2', 2000);
-INSERT INTO crud_db.product (product_id, product_name, product_price) VALUES (3, 'Product 3', 3000);
-INSERT INTO crud_db.product (product_id, product_name, product_price) VALUES (4, 'Product 4', 2000);
-INSERT INTO crud_db.product (product_id, product_name, product_price) VALUES (5, 'Product 5', 1500);
+INSERT INTO kaushik.product (product_id, product_name, product_price) VALUES (1, 'Product 1', 2000);
+INSERT INTO kaushik.product (product_id, product_name, product_price) VALUES (2, 'Product 2', 2000);
+INSERT INTO kaushik.product (product_id, product_name, product_price) VALUES (3, 'Product 3', 3000);
+INSERT INTO kaushik.product (product_id, product_name, product_price) VALUES (4, 'Product 4', 2000);
+INSERT INTO kaushik.product (product_id, product_name, product_price) VALUES (5, 'Product 5', 1500);
 ```
 10. Make some ammendments to the bind address and root
 ```
