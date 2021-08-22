@@ -8,7 +8,7 @@ docker rmi -f $(docker images -a -q)
 
 ## Step 1: Setting up the working environment. 
 1. Navigate to the project directory
-2. Clone the repository JS node app https://github.com/mdobydullah/nodejs-crud-with-expressjs-mysql
+2. Clone the repository JS node app https://github.com/hendisantika/crud-bootstrap-mysql-nodejs
 3. Install the dependencies | ```npm install```
 4. Create a Docker Network.
 ```
@@ -157,3 +157,38 @@ docker run -d \
 my-app-crud:1.0
 ```
 ![](https://i.imgur.com/ivcnApO.png)
+# Step 4: Creating docker-compose.yaml
+
+Use case: You can run multiple images at the same time within one configuration using docker-compose. It composes all your images, commands of each images, network, environmental variablers, volumes, etc.
+<br>
+Best practice.<br> **Ensure that no containers and images are installed.**
+```
+docker rm -f $(docker ps -a -q)
+```
+<br>
+
+**Note: ** : Make sure docker-compose is installed on your system.
+`docker-compose.yaml` = this can be any name of your choice.
+```
+version: '3' # the version of docker-compose
+services: # images ur gonna install
+
+  mysql: # --name of the container
+    image: mysql:5.6
+    ports:
+      - 3307:3306 # bind hostmachinePORT:DockerContainerPORT ⇒ 3307:3306
+    environment:
+      - MYSQL_ROOT_PASSWORD=newpass
+      - MYSQL_DATABASE: kaushik
+      - MYSQL_USER: root
+      - MYSQL_PASSWORD: pass
+    restart: unless-stopped
+    
+  my-app-crud:
+    image: my-app-crud:1.0
+    network_mode: "host"
+```
+Run the container:
+```
+docker-compose -f docker-compose.yaml up
+```
