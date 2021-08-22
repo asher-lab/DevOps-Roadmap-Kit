@@ -11,9 +11,11 @@ docker rmi -f $(docker images -a -q)
 2. Clone the repository JS node app https://github.com/hendisantika/crud-bootstrap-mysql-nodejs
 You can also work with this: https://github.com/mdobydullah/nodejs-crud-with-expressjs-mysql just need some changes in credentials and config.
 
-Change some credentials in index.js
+Change some credentials in index.js <br>
 ![](https://i.imgur.com/1Vz2VDk.png)
-<br>
+<br><br>
+Refer to this forum to know the IP or host : https://stackoverflow.com/questions/24319662/from-inside-of-a-docker-container-how-do-i-connect-to-the-localhost-of-the-mach
+
 4. Install the dependencies | ```npm install```
 5. Create a Docker Network.
 ```
