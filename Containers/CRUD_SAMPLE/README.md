@@ -62,7 +62,10 @@ INSERT INTO kaushik.product (product_id, product_name, product_price) VALUES (5,
 ```
 10. Make some ammendments to the bind address and root
 ```
+mysql> use mysql;
+mysql> select host,user from user;
 mysql> CREATE USER 'root'@'%' IDENTIFIED BY 'newpass';
+mysql> select host,user from user;
 GRANT ALL PRIVILEGES ON *.* TO 'root'@'%' WITH GRANT OPTION;
 FLUSH PRIVILEGES;
 
