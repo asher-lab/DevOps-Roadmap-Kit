@@ -190,7 +190,7 @@ nvm install 7.5
 # to install the dependencies on to your system
 npm install
 # to start running the application
-npm server.js
+node server.js
 ```
 <br>
 The documentation for MongoDB Express can be found in docker hub: https://hub.docker.com/_/mongo-express
@@ -200,6 +200,7 @@ The documentation for MongoDB Express can be found in docker hub: https://hub.do
 1. Prepare the resources needed:
 ```
 # download the images from docker hub
+sudo systemctl start docker
 docker pull mongo
 docker pull mongo-express
 ```
@@ -241,6 +242,7 @@ mongo-express
 ```
 docker ps
 docker logs <container ID>
+# make sure node js app is running
 ```
 7. If you are running in the cloud , you need to set up for your firewall so port 8081 can be opened. You need to put collection aka table in sql. Add `user-account` as a collection. Access it via `ipaddress:8081`
 8. Verify the everything is running
@@ -290,13 +292,12 @@ kill $(lsof -t -i:8080)
 1. index.html has embedded localhost that's why it can't connect to MongoDB app.
 2. Fix display on CSS = style.display = 'none' to 'block'.
 
-# On dockerizing the nodejs app
-https://nodejs.org/en/docs/guides/nodejs-docker-webapp/
-You can dockerize the UI + Backend (app/index.html) and (app/server.js) by following the tutorials above.
+
+
 
 <br><br>
 
-## Docker Example2 (with docker compose) = running multiple docker containers
+## Docker Example2 (with docker compose) = running multiple docker images
 
 Structure of yaml file:
 ```
@@ -313,7 +314,7 @@ services:
 
 Run docker compose:
 ```
-docker-compose -f docker-compose.yaml up
+docker-compose -f docker-compose.yaml up -d
 ```
 docker-compose.yaml should contain the following:
 
@@ -341,4 +342,50 @@ Othe useful parameters:
 ```
 tty: true
 stdin_open: true
+```
+
+ # On dockerizing the nodejs app
+https://nodejs.org/en/docs/guides/nodejs-docker-webapp/
+You can dockerize the UI + Backend (app/index.html) and (app/server.js) by following the tutorials above.
+
+`Dockerfile`
+```
+FROM node:13-alpine
+
+ENV MONGO_DB_USERNAME=admin \
+    MONGO_DB_PWD=password
+
+RUN mkdir -p /home/app
+
+COPY ./app /home/app
+
+# set default dir so that next commands executes in /home/app dir
+WORKDIR /home/app
+
+# will execute npm install in /home/app because of WORKDIR
+RUN npm install
+
+# no need for /home/app/server.js because of WORKDIR
+CMD ["node", "server.js"]
+
+```
+
+Perform the building process:
+<br>
+When running this , you should be on the right directory , also your Dockerfile
+```
+docker build -t my-app-crud:1.0 .
+docker run -d \
+--net containers_default \
+my-app-crud:1.0
+
+or
+
+```
+docker run -d \
+--network="host" \
+my-app-crud:1.0
+```
+
+netstat -lpnt
 ```
