@@ -198,7 +198,8 @@ Run the container:
 ```
 docker-compose -f docker-compose.yaml up
 ```
-
+![](https://i.imgur.com/ivcnApO.png)
+Done.
 
  # # ** ...What I haven't yet done, yet optional: **
  ```
@@ -208,4 +209,3 @@ docker-compose -f docker-compose.yaml up
  upload on a container repo like ECS - via jenkins or gitlabci
  run nginx on docker as well (optional)
  
-```
