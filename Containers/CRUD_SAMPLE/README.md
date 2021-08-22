@@ -161,7 +161,7 @@ my-app-crud:1.0
 
 Use case: You can run multiple images at the same time within one configuration using docker-compose. It composes all your images, commands of each images, network, environmental variablers, volumes, etc.
 <br>
-Best practice.<br> **Ensure that no containers and images are installed.**
+Best practice.<br> **Ensure that no containers running.<br> Also, ensure nginx is still running.**
 ```
 docker rm -f $(docker ps -a -q)
 ```
@@ -177,18 +177,35 @@ services: # images ur gonna install
     image: mysql:5.6
     ports:
       - 3307:3306 # bind hostmachinePORT:DockerContainerPORT ⇒ 3307:3306
+
     environment:
       - MYSQL_ROOT_PASSWORD=newpass
-      - MYSQL_DATABASE: kaushik
-      - MYSQL_USER: root
-      - MYSQL_PASSWORD: pass
+      - 'MYSQL_DATABASE=kaushik'
+      
+    volumes:
+      - ./mysqldump:/docker-entrypoint-initdb.d
+      
     restart: unless-stopped
     
   my-app-crud:
     image: my-app-crud:1.0
+    
     network_mode: "host"
+    
+    restart: unless-stopped
 ```
 Run the container:
 ```
 docker-compose -f docker-compose.yaml up
+```
+
+
+ # # ** ...What I haven't yet done, yet optional: **
+ ```
+ data persistency
+ https
+ ci/cd pipeline - via jenkins or gitlabci
+ upload on a container repo like ECS - via jenkins or gitlabci
+ run nginx on docker as well (optional)
+ 
 ```
