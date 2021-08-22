@@ -9,21 +9,22 @@ docker rmi -f $(docker images -a -q)
 ## Step 1: Setting up the working environment. 
 1. Navigate to the project directory
 2. Clone the repository JS node app https://github.com/hendisantika/crud-bootstrap-mysql-nodejs
+You can also work with this: https://github.com/mdobydullah/nodejs-crud-with-expressjs-mysql just need some changes in credentials and config.
 
 Change some credentials in index.js
 ![](https://i.imgur.com/1Vz2VDk.png)
 <br>
-3. Install the dependencies | ```npm install```
-4. Create a Docker Network.
+4. Install the dependencies | ```npm install```
+5. Create a Docker Network.
 ```
 docker network create crud-network
 ```
-5.  Install MySQL 5.6 as a Docker Container. || version 5.6 is best for deprecated authentication method
+6.  Install MySQL 5.6 as a Docker Container. || version 5.6 is best for deprecated authentication method
 ```
 docker pull mysql/mysql-server:5.6
 docker images
 ```
-6. Run mysql as a docker container. <br>*<br>Running in a detached mode. <br>Running with the use of binding port technique hostmachinePORT:DockerContainerPORT ⇒ 3307:3306<br>Running on crud-network Network.*
+7. Run mysql as a docker container. <br>*<br>Running in a detached mode. <br>Running with the use of binding port technique hostmachinePORT:DockerContainerPORT ⇒ 3307:3306<br>Running on crud-network Network.*
 ```
 docker run -p3307:3306 -d \
 --name mysql \
@@ -31,13 +32,13 @@ docker run -p3307:3306 -d \
 -e  MYSQL_ROOT_PASSWORD=newpass \
 mysql:5.6
 ```
-7. Enter mysql terminal as a docker container
+8. Enter mysql terminal as a docker container
 ```
 docker ps
 docker exec -it mysql /bin/bash
 #e.g. root@7dba1170d1b1:/#
 ```
-8. Enter required credentials (Manual option: unless specify directly to Docker-Compose.yaml
+9. Enter required credentials (Manual option: unless specify directly to Docker-Compose.yaml
 ```
 mysql -uroot -p
 Enter password: newpass
@@ -57,7 +58,7 @@ INSERT INTO crud_db.product (product_id, product_name, product_price) VALUES (3,
 INSERT INTO crud_db.product (product_id, product_name, product_price) VALUES (4, 'Product 4', 2000);
 INSERT INTO crud_db.product (product_id, product_name, product_price) VALUES (5, 'Product 5', 1500);
 ```
-9. Make some ammendments to the bind address and root
+10. Make some ammendments to the bind address and root
 ```
 mysql> CREATE USER 'root'@'%' IDENTIFIED BY 'newpass';
 GRANT ALL PRIVILEGES ON *.* TO 'root'@'%' WITH GRANT OPTION;
