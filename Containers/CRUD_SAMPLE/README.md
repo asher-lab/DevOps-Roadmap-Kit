@@ -9,6 +9,9 @@ docker rmi -f $(docker images -a -q)
 ## Step 1: Setting up the working environment. 
 1. Navigate to the project directory
 2. Clone the repository JS node app https://github.com/hendisantika/crud-bootstrap-mysql-nodejs
+
+Change some credentials in index.js
+![](https://i.imgur.com/1Vz2VDk.png)
 3. Install the dependencies | ```npm install```
 4. Create a Docker Network.
 ```
@@ -209,3 +212,4 @@ Done.
  upload on a container repo like ECS - via jenkins or gitlabci
  run nginx on docker as well (optional)
  
+```
