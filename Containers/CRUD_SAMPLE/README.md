@@ -12,6 +12,7 @@ docker rmi -f $(docker images -a -q)
 
 Change some credentials in index.js
 ![](https://i.imgur.com/1Vz2VDk.png)
+<br>
 3. Install the dependencies | ```npm install```
 4. Create a Docker Network.
 ```
