@@ -190,7 +190,7 @@ services: # images ur gonna install
       - 'MYSQL_DATABASE=kaushik'
       
     volumes:
-      - ./mysqldump:/docker-entrypoint-initdb.d
+      - ./mysqldump:/docker-entrypoint-initdb.d # mysqldump folder should contain db.sql
       
     restart: unless-stopped
     
