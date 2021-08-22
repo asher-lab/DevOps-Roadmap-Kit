@@ -131,7 +131,7 @@ node index
 ```
 ## Step 3: Creating the Dockerfile and DockerImage out of the nodejs app
 Use case: By creating a docker image, teams across the organization can work on the same nodejs application without having a hard time setting up the work environment. This would also allow a team to create a CI/CD pipeline.
-
+<br>
 `Dockerfile`
 ```
 FROM node:14.17.5
@@ -156,4 +156,4 @@ docker run -d \
 --network="host" \
 my-app-crud:1.0
 ```
-Done.
+![](https://i.imgur.com/ivcnApO.png)
