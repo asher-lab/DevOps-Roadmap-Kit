@@ -481,3 +481,72 @@ network mode as "host"
 verdict: I diagnosed it via network mode , because it is not connecting to db of a container since different network. 
 ```
 2. A docker image when run is not responding. Main reason is some of its dependencies are not also running. For example if a node need to connect within a database that is not running, probably it will not work.
+
+# Data Persistency in Docker
+
+The default directory where the data persist is located in data/db is stored: <br>
+```
+docker ps
+docker exec -it <container ID> sh or bin/bash
+ls /data/db
+$ exit
+ls cd var/lib/docker
+```
+Different application / databases have different paths: Example <br>
+```
+mysql: /var/lib/mysql
+postgres: /var/lib/postgresql/data
+```
+The contens of yaml file is below: 
+`docker-compose.yaml`
+```
+version: '3'
+services:
+  my-crud-app:
+    image: 111694765298.dkr.ecr.us-east-1.amazonaws.com/hello:latest
+    network_mode: "host"
+  mongodb:
+    image: mongo
+    ports:
+      - 27017:27017
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=admin
+      - MONGO_INITDB_ROOT_PASSWORD=password
+    volumes:
+      - mongo-data:/data/db
+  mongo-express:
+    image: mongo-express
+    ports:
+      - 8081:8081
+    environment:
+      - ME_CONFIG_MONGODB_ADMINUSERNAME=admin
+      - ME_CONFIG_MONGODB_ADMINPASSWORD=password
+      - ME_CONFIG_MONGODB_SERVER=mongodb
+    restart: unless-stopped
+volumes:
+  mongo-data:
+      driver: local
+
+```
+
+# Pushing and Pulling Data in Nexus && Running Nexus as a Docker Container
+1. Create Repo (hosted) : docker-hosted.
+2. Create and Assign Role.
+3. Docker login:
+```
+set unique port for docker
+realm - for tokenization
+configure http connection to docker
+nano etc/docker/daemon.json
+docker tag image:tag ip:port/image:tag
+docker push ip:port/image:tag
+```
+Note: Layers and assets can be used by other people. <br>
+<br>
+## Fetching / pulling data
+```
+curl -u asher:123pass -X GET 'http://ip:port/service/rest/v1/components?repisitory=docker-hosted
+
+# Run nexus as a docker container
+docker pull nexus3
+```
