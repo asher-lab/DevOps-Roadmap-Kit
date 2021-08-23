@@ -200,7 +200,9 @@ The documentation for MongoDB Express can be found in docker hub: https://hub.do
 1. Prepare the resources needed:
 ```
 # download the images from docker hub
+
 sudo systemctl start docker
+### -- sudo systemctl stop docker.socket
 docker pull mongo
 docker pull mongo-express
 ```
@@ -389,3 +391,93 @@ my-app-crud:1.0
 
 netstat -lpnt
 ```
+
+<br> <br>
+# On using Amazon ECR (not yet ECS) to push and pull files
+## Pushing Image to the registry
+**On docker versus on Amazon ECR: <br>**
+You can pull request just by using `docker pull mysql:5.6` this is equivalent to: `docker pull docker.io/library/mysql:5.6`<br>
+You can pull request on Amazon ECR by using `RegistryName/ImageName:tag` <br>
+1. Create a repository via Amazon ECR. There is one repo per image (it is possible to have multiple version for a single image). You can create both public and private repositories. Let's stick with a private repo. for now.
+<br>
+Best convention is to practice using the name on your image name:
+```
+111694765298.dkr.ecr.us-east-1.amazonaws.com/my-app-crud
+```
+2. Pushing an image to ecr. Remember that AWS CLI and creds needs to be configured here. <br> On ECR console, there are commands that can help with this process.
+```
+aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin 111694765298.dkr.ecr.us-east-1.amazonaws.com
+```
+3.  After the build completes, tag your image so you can push the image to this repository:
+```
+$ docker image
+docker tag my-app-crud:1.0 111694765298.dkr.ecr.us-east-1.amazonaws.com/my-app-crud:1.0
+$ docker image # to verify the process
+```
+4.  Run the following command to push this image to your newly created AWS repository:
+```
+docker push 111694765298.dkr.ecr.us-east-1.amazonaws.com/my-app-crud:1.0
+```
+5. Making some changes in the repository and pushing the changes under different versions. 
+```
+# Make some changes
+docker build -t my-app-crud:1.1 .
+$ docker images
+docker tag my-app-crud:1.1 111694765298.dkr.ecr.us-east-1.amazonaws.com/my-app-crud:1.1
+docker push 111694765298.dkr.ecr.us-east-1.amazonaws.com/my-app-crud:1.1
+
+```
+![](https://i.imgur.com/bW3tbO3.png)
+We simulate the Jenkinds process. Which includes building the image and push it into a registry which is (Amazon ECR). The commands that we used are the same when we are going to use Jenkins. 
+
+## Pulling Image to the registry
+Run docker compose:
+```
+docker-compose -f docker-compose.yaml up -d
+```
+docker-compose.yaml should contain the following:
+
+```
+version: '3'
+services:
+  my-crud-app:
+    image: 111694765298.dkr.ecr.us-east-1.amazonaws.com/hello:latest
+    network_mode: "host"
+  mongodb:
+    image: mongo
+    ports:
+      - 27017:27017
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=admin
+      - MONGO_INITDB_ROOT_PASSWORD=password
+  mongo-express:
+    image: mongo-express
+    ports:
+      - 8081:8081
+    environment:
+      - ME_CONFIG_MONGODB_ADMINUSERNAME=admin
+      - ME_CONFIG_MONGODB_ADMINPASSWORD=password
+      - ME_CONFIG_MONGODB_SERVER=mongodb
+    restart: unless-stopped
+```
+Othe useful parameters:
+```
+tty: true
+stdin_open: true
+```
+
+**Issues faced when deploying app on another computer: <br>**
+1. Docker contents not updating when modified the code. Updating docker image with a new code. Then running it via docker compose:
+```
+# Be sure yaml file is in docker-compose.yaml
+docker-compose up -d --build --force-recreate
+
+# build the image via Dockerfile
+docker build --no-cache -t my-app-crud:1.1 .
+
+# a work around too is be sure to run it on same network when you are trying to run the container independently (not together with mongodb, and mongoexpress)
+network mode as "host"
+
+verdict: I diagnosed it via network mode , because it is not connecting to db of a container since different network. 
+```
+2. A docker image when run is not responding. Main reason is some of its dependencies are not also running. For example if a node need to connect within a database that is not running, probably it will not work.
