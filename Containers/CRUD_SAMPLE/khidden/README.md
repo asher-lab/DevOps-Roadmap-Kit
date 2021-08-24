@@ -151,5 +151,8 @@ docker containers are still running.
 <br>
 <br>
 ## Goal three : Visit app via domain with https : wecare4u.tk
+Follow the instruction here: https://www.nginx.com/blog/using-free-ssltls-certificates-from-lets-encrypt-with-nginx/
+
+![](https://i.imgur.com/vUFRMOp.png)
 ## Goal four : Create Monitoring setup using Prometheus and Grafana
 ## Goal five: Visit monitoring domain via https: wecare4u.ml
