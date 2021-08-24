@@ -318,10 +318,11 @@ Run docker compose:
 ```
 docker-compose -f docker-compose.yaml up -d
 ```
-docker-compose.yaml should contain the following:
+
+docker-compose.yaml should contain the following:::
 
 ```
-version: '3'
+version: 3
 services:
   mongodb:
     image: mongo
@@ -340,7 +341,10 @@ services:
       - ME_CONFIG_MONGODB_SERVER=mongodb
     restart: unless-stopped
 ```
+
 Othe useful parameters:
+
+
 ```
 tty: true
 stdin_open: true
@@ -460,6 +464,7 @@ services:
       - ME_CONFIG_MONGODB_SERVER=mongodb
     restart: unless-stopped
 ```
+
 Othe useful parameters:
 ```
 tty: true
@@ -499,8 +504,11 @@ postgres: /var/lib/postgresql/data
 ```
 The contens of yaml file is below: 
 `docker-compose.yaml`
+
+
 ```
-version: '3'
+
+version:  # change to '3'
 services:
   my-crud-app:
     image: 111694765298.dkr.ecr.us-east-1.amazonaws.com/hello:latest
