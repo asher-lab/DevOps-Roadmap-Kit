@@ -134,7 +134,22 @@ docker containers are still running.
 
 
 # You will made this>>
-## Goal two : Visit app via domain : crud-main.tk
-## Goal three : Visit app via domain with https : crud-main.tk
+## Goal two : Visit app via domain : wecare4u.tk
+1. cd /etc/nginx/sites-available/
+2. sudo nano custom_server.conf
+```
+  server {
+    listen      80;
+    charset     utf-8;
+    server_name wecare4u.tk;
+    location / {
+        proxy_pass http://localhost:8000;
+  }
+```
+![](https://i.imgur.com/mCalkIC.png)
+3. sudo service nginx restart
+<br>
+<br>
+## Goal three : Visit app via domain with https : wecare4u.tk
 ## Goal four : Create Monitoring setup using Prometheus and Grafana
-## Goal five: Visit monitoring domain via https: crud-monitor.tk
+## Goal five: Visit monitoring domain via https: wecare4u.ml
