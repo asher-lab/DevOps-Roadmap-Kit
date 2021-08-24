@@ -404,11 +404,14 @@ You can pull request just by using `docker pull mysql:5.6` this is equivalent to
 You can pull request on Amazon ECR by using `RegistryName/ImageName:tag` <br>
 1. Create a repository via Amazon ECR. There is one repo per image (it is possible to have multiple version for a single image). You can create both public and private repositories. Let's stick with a private repo. for now.
 <br>
+
 Best convention is to practice using the name on your image name:
 ```
 111694765298.dkr.ecr.us-east-1.amazonaws.com/my-app-crud
 ```
+
 2. Pushing an image to ecr. Remember that AWS CLI and creds needs to be configured here. <br> On ECR console, there are commands that can help with this process.
+
 ```
 aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin 111694765298.dkr.ecr.us-east-1.amazonaws.com
 ```
