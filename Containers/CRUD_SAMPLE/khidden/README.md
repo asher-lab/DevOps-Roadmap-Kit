@@ -50,7 +50,7 @@ services:
   my-crud-app:
     image: 111694765298.dkr.ecr.us-east-1.amazonaws.com/my-crud-app:1.0
     network_mode: "host"
-	restart: unless-stopped
+    restart: unless-stopped
   mysql: # --name of the container
     image: mysql:5.6
     ports:
