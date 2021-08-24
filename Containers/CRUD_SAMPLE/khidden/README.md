@@ -1,3 +1,4 @@
+# Assignment   1. A: Docker Compose
 ```
 1.Login to: I give you mine
 https://www.awseducate.com/student/s/awssite
@@ -40,9 +41,27 @@ aws ecr get-login-password --region us-east-1 | docker login --username AWS --pa
 sudo systemctl start docker
 docker rm -f $(docker ps -a -q)
 ```
-
 ```
-docker-compose.yaml
+create a directory named: mysqldump <br>
+Then cd to it:
+Create a file named: db.sql
+Paste this:
+
+CREATE table product
+(
+	product_id int auto_increment primary key,
+	product_name varchar(200) null,
+	product_price int null
+)charset=latin1;
+
+INSERT INTO kaushik.product (product_id, product_name, product_price) VALUES (1, 'Product 1', 2000);
+INSERT INTO kaushik.product (product_id, product_name, product_price) VALUES (2, 'Product 2', 2000);
+INSERT INTO kaushik.product (product_id, product_name, product_price) VALUES (3, 'Product 3', 3000);
+INSERT INTO kaushik.product (product_id, product_name, product_price) VALUES (4, 'Product 4', 2000);
+INSERT INTO kaushik.product (product_id, product_name, product_price) VALUES (5, 'Product 5', 1500);
+```
+```
+Create docker-compose.yaml the same level as mysqldump , not inside! $ cd ..
 ```
 ```
 version: '3'
@@ -68,5 +87,54 @@ services:
 
 ```
 + Run the docker-compose config:
+netstat -lpnt
 docker-compose -f docker-compose.yaml up -d
+netstat -lpnt
++ wait for 10 seconds after creation
++ go to:
+ip:8000 | 44.194.205.9:8000
 ```
+![](https://i.imgur.com/ivcnApO.png)
+<br> <br>
+
+# Assignment   1. B: Nginx Reverse Proxy
+```
+we don't want this:
+ip:8000
+
+rather we want this:
+ip or ip:80 or crud-main.tk
+```
+
+## Goal one : Visit IP without port 8000
+```
+1. Install nginx
+2. Go to ip:80 |  44.194.205.9:80
+3. sudo unlink /etc/nginx/sites-enabled/default
+4. cd /etc/nginx/sites-available/
+5. sudo nano custom_server.conf
++ Add this:
+
+server {
+	listen 80;
+	location / {
+	proxy_pass http://localhost:8000;
+	}
+}
+
+6.put also the config here:
+ /etc/nginx/sites-enabled/custom_server.conf
+
+7. sudo service nginx configtest
+8. sudo service nginx restart
+9. sudo service nginx status
+10. Visit IP  without port | 44.194.205.9 | Ensure that 
+docker containers are still running.
+```
+
+
+# You will made this>>
+## Goal two : Visit app via domain : crud-main.tk
+## Goal three : Visit app via domain with https : crud-main.tk
+## Goal four : Create Monitoring setup using Prometheus and Grafana
+## Goal five: Visit monitoring domain via https: crud-monitor.tk
