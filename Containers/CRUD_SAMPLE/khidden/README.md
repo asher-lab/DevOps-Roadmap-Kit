@@ -145,14 +145,44 @@ docker containers are still running.
     location / {
         proxy_pass http://localhost:8000;
   }
+}
 ```
 ![](https://i.imgur.com/mCalkIC.png)
 3. sudo service nginx restart
 <br>
 <br>
 ## Goal three : Visit app via domain with https : wecare4u.tk
-Follow the instruction here: https://www.nginx.com/blog/using-free-ssltls-certificates-from-lets-encrypt-with-nginx/
+1. Follow the instruction here: https://www.nginx.com/blog/using-free-ssltls-certificates-from-lets-encrypt-with-nginx/
+2. sudo service nginx restart
 
 ![](https://i.imgur.com/vUFRMOp.png)
+
+
 ## Goal four : Create Monitoring setup using Prometheus and Grafana
-## Goal five: Visit monitoring domain via https: wecare4u.ml
+
+1. Follow the instruction here: https://www.nginx.com/blog/using-free-ssltls-certificates-from-lets-encrypt-with-nginx/
+2. sudo service nginx restart
+```
+  server {
+    listen      80;
+    charset     utf-8;
+    server_name wecare4u.ml www.wecare4u.ml;
+    location / {
+        proxy_pass http://localhost:3000;
+  }
+}
+ ```
+ 3. Install Grafana
+ ```
+docker run -d --name=grafana -p 3000:3000 grafana/grafana
+docker
+```
+# 
+## Goal five: Visit monitoring domain via https: 
+
+Visit now!<br>
+
+wecare4u.ml <br>
+![](https://i.imgur.com/QdkKzYp.png)
+wecare4u.tk
+![](https://i.imgur.com/vUFRMOp.png)
