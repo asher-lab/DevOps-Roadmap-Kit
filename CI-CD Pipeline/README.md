@@ -29,7 +29,7 @@ Ensure that all necessary tools are present `docker build, npm package, gradlew 
 3. **Publish an Artifact/ Image**
 Be sure the credentials are set up.
 
-## Installing Jenkins
+## A. Installing Jenkins
 Installation is a straight forward process; Either install it manually, where you will set up for the jenkins-user and grant appropriate permissions. Or install via docker
 
 <br>
@@ -86,6 +86,84 @@ cat /var/lib/docker/volumes/jenkins_home/_data/secrets/initialAdminPassword
 3. Install plugins.
 4. Create first admin user.
 `Warning: Building on the controller node can be a security issue. You should set up distributed builds.`
+
+## B. Installing Build Tools
+
+There are 2 ways to install  tools: <br>
+1. Via Jenkins itself.
+2. Inside the server where Jenkins is running. In case of docker, terminal of jenkins in docker via root:
+```
+docker exec -it -u 0 <containerID> bash
+```
+Alert: How to persists installation made inside the Jenkins container. Because everytime I started a fresh container of Jenkins NPM is removed.
+```
++ After you go into the root terminal of the container:
+ cat /etc/issue
+ apt update
+ apt install curl
+ apt install npm
+ apt install nodejs
+```
+### Building a simple freestyle job
+1. You can create a freestyle job easily, then perform:
+`npm --version`
+It is better to create a script via cmd and not the preinstalled tools because it is way more flexible.
+2. Build Now | Configure if you will add , modify or delete executables.
+
+## Configuring Git together with Jenkins
+###  Basic Steps in connecting GIT to Jenkins Pipeline
+
+```
+1. Add repo url.
+2. Add authentication.
+3. Decide for the branch.
+4. The repo will connect to the job.
+5. Build.
+```
+
+Jobs are **stored** in: 
+```
+sudo via jenkins docker container as a root user:
+cd /var/jenkins_home
+cd /var/jenkins_home/jobs/job-name/builds/
+
+```
+Cloned remote repo are **stored** in : <br>
+```
+cd /var/jenkins_home/workspace/job-name
+# tmp data stored files that are for temporary storage
+```
+
+Test 1. Running from a branch on a git repository:
+```
+1. Decide for the branch
+2. Assume file has simple command: freestyle.sh
+
+npm --version
+
+3. Provide the execute shell scripts:
+chmod +x freestyle.sh
+./freestyle.sh
+```
+
+Test 2. Create a simple build pipeline:<br>
+Git -> Maven test -> Maven package -> Jar file
+<br>
+
+```
++ freestyle job : java-maven-build
++ add maven test: test
++ add maven build: package
++ set the correct branch: jenkins-branch (example)
++ check the results on the directory:
+
+cd var/jenkins_home/workspace/java-maven-build
+cd target
+ls
+
+```
+
+<br><br>
 
 #magic desktop
 ```docker run -p 6070:80 dorowu/ubuntu-desktop-lxde-vnc -d```
