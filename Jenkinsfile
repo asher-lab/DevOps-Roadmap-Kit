@@ -25,7 +25,7 @@ pipeline {
       
         stage("deploy") {
             steps {
-               echo "deploying the image on rep
+               echo "deploying the image on rep"
         }
     }   
 }
