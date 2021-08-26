@@ -111,7 +111,7 @@ It is better to create a script via cmd and not the preinstalled tools because i
 2. Build Now | Configure if you will add , modify or delete executables.
 
 ## Configuring Git together with Jenkins
-###  Basic Steps in connecting GIT to Jenkins Pipeline
+###  A. Basic Steps in connecting GIT to Jenkins Pipeline
 
 ```
 1. Add repo url.
@@ -142,7 +142,7 @@ Test 1. Running from a branch on a git repository:
 npm --version
 
 3. Provide the execute shell scripts:
-chmod +x freestyle.sh
+chmod +x /'ci-ci pipeline'/Sample1/freestyle.sh
 ./freestyle.sh
 ```
 
@@ -152,18 +152,114 @@ Git -> Maven test -> Maven package -> Jar file
 
 ```
 + freestyle job : java-maven-build
-+ add maven test: test
-+ add maven build: package
++ add maven test: mvn test
++ add maven build: mvn package
 + set the correct branch: jenkins-branch (example)
 + check the results on the directory:
 
 cd var/jenkins_home/workspace/java-maven-build
 cd target
 ls
+```
+**Tip** When building a java file, be sure the class are the same and the file name is the same.
+```
+It is important to have src/main/java/com/example/Application.java
+as a syntax
+```
+### B. Mounting Docker to the Jenkins Container
+When you mount docker and docker runtime in the Jenkins container. It will make all the docker commands available on the container.
+<br><br>
+```
+docker run -p 8080:8080 -p 5000:5000 -d \
+-v jenkins_home:/var/jenkins_home \
+-v /var/run/docker.sock:/var/run/docker.sock \
+-v $(which docker):/usr/bin/docker \
+jenkins/jenkins:lts
+```
+#### B.1 Adding Permission to the Jenkins user
+```
+1. Login into the container as a root.
+2. Give appropriate permission to /var/run/docker.sock = chmod 666 /var/run/docker.sock
+3. whoami
+4. ls -l /var/run/docker.sock
+5. login as jenkins user
+6. docker pull redis
+7. Now you can execute shell scripts via jenkins user. 
+```
+### C. Building Image from Jar File. Containerizing.
 
 ```
+Dockerfile
+```
+```
 
-<br><br>
+FROM openjdk:8-jre-alpine
 
-#magic desktop
-```docker run -p 6070:80 dorowu/ubuntu-desktop-lxde-vnc -d```
+EXPOSE 8080
+
+COPY ./target/java-maven-app-1.1.0-SNAPSHOT.jar /usr/app/
+
+WORKDIR /usr/app/
+
+ENTRYPOINT ["java", "-jar", "java-maven-app-1.1.0-SNAPSHOT.jar"]
+```
+1. Add to execute shell script in docker
+```
+docker build -t java-maven-app:1.0 .
+```
+2. Build the job. <br>
+ Issues:
+
+a. Be sure that Dockerfile are configured correctly, if it is a directory,  be sure to include / up until the end. (e.g. usr/app versus usr/app/ is different). <br>
+b.  Also, as a note, docker containers are intertwined now with the the localhost
+
+3. `docker images`	
+
+### D. Pushing the code to a docker hub repo. Using Jenkins
+Git -> Maven test -> Maven package -> Jar file -> Push to dockerhub
+
+<br>
+
+1. Create a dockerhub account. 
+2. Save the credentials
+3. Set this command as a build: 
+
+```
+mvn test
+mvn package
+docker build -t java-maven-app:1.0 .
+docker login
+docker push asherlab/java-maven-app:1.0
+```
+4. Add bindings of username and password (separated) then set variables: USERNAME and PASSWORD.
+5. Set this command as a build: 
+```
+mvn test
+mvn package
+docker build -t java-maven-app:jma-1.0 .
+docker login -u $USERNAME -p $PASSWORD
+docker tag java-maven-app:jma-1.0 asherlab/java-maven-app:jma-1.0
+docker push asherlab/java-maven-app:jma-1.0
+```
+6. Visit the docker-hub repo. Your repo.
+7. Making best practice.  As a solution against: 
+```
+WARNING! Using --password via the CLI is insecure. Use --password-stdin.
+WARNING! Your password will be stored unencrypted in /var/jenkins_home/.docker/config.json.
+```
+8. Set this command as a build:
+```
+mvn test
+mvn package
+docker build -t java-maven-app:jma-2.0 .
+echo $PASSWORD | docker login -u $USERNAME --password-stdin
+docker tag java-maven-app:jma-2.0 asherlab/java-maven-app:jma-2.0
+docker push asherlab/java-maven-app:jma-2.0
+```
+### E. Pushing the code to a nexus  repo. Using Jenkins
+Issues:
+1. Configure no https connection on Jenkins
+2. Configure no https connection in docker
+3. or add https
+Use case: In rare, circumstance automatic failover between Amazon ECR, Docker Hub or any other third
+party repo is failing. Someone need to configure a failover protection by building own Artifactory / repo manager.
