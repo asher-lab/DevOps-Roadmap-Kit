@@ -40,23 +40,12 @@ pipeline {
 			}
 		}
 
-	}
-	
-		stage("deploy") {
-			steps {
-				script {
-					echo "Deploying the package.."					
+	stage("deploy") {
+				steps {
+					script {
+						echo "Deploying the package.."					
+					}
 				}
 			}
-		}
-
-	}  
-	
-	
-	
-	
-	
-	
-	
-	
+}
 }
