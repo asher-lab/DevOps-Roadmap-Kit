@@ -658,4 +658,76 @@ pipeline {
     
 }
 ```
+### Creating complete pipeline
+1. Be sure to have the Git connected to the Job. (In should include Dockerfile)
+2. Be sure the appropriate tools are present when testing, building, publishing and deploying.
+3. Be sure that credentials are set up.
+```
+pipeline {
+    agent any
+	tools { 
+		maven 'maven-3.8.2'
+	}
+	
+    stages {
+	
+
+		stage("test") {
+			steps {
+				script {
+					echo "Testing the code.."
+					sh 'mvn test'
+				}
+			}
+		}
+
+		
+		stage("build jar") {
+			steps {
+				script {
+					echo "Bulding the application.."
+					sh 'mvn package'
+				}
+			}
+		}
+
+		stage("build image") {
+			steps {
+				script {
+					echo "Building docker image.."	
+					withCredentials([usernamePassword(credentialsId: 'dockerhub-asherlab', passwordVariable: 'PASSWORD', usernameVariable: 'USERNAME')]){
+					
+						sh 'docker build -t java-maven-app:jma-2.2 .'
+						sh "echo $PASSWORD | docker login -u $USERNAME --password-stdin"
+						sh 'docker tag java-maven-app:jma-2.2 asherlab/java-maven-app:jma-2.2'
+						sh 'docker push asherlab/java-maven-app:jma-2.2'
+				   }
+			   }	
+			}
+		}
+
+	stage("deploy") {
+				steps {
+					script {
+						echo "Deploying the package.."					
+					}
+				}
+			}
+}
+}
+```
+Test -> Build Jar -> Build Docker Image -> Push Image to Dockerhub -> Deploy
+
+
+
+
+
+
+
+
+
+
+
+
+
 
