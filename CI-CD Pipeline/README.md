@@ -263,3 +263,399 @@ Issues:
 3. or add https
 Use case: In rare, circumstance automatic failover between Amazon ECR, Docker Hub or any other third
 party repo is failing. Someone need to configure a failover protection by building own Artifactory / repo manager.
+
+
+## Simple Pipeline Job in Jenkins
+You can build your own pipeline using script. In jenkins, groovy language is used in creating a pipeline. Such as:
+<br>
+Ex: checkout, tests, build, deploy, cleanup, etc.
+<br>
+
+`Jenkinsfile`
+```
+pipeline {
+    agent any
+  
+    stages {
+        stage("init") {
+            steps {
+              echo "Initialzing the APP"
+            }
+        }
+      
+      
+        stage("build jar") {
+            steps {
+                echo "building the app"
+            }
+        }
+      
+      
+        stage("build image") {
+            steps {
+               echo "building the image"
+            }
+        }
+      
+      
+        stage("deploy") {
+            steps {
+               echo "deploying the image on rep"
+        }
+    }   
+}
+    
+    
+}
+```
+
+1. Create a pipeline job in jenkins: my-pipeine
+2. Set up git, creds., branch.  Set pipeline with scm.
+3. Build the project.
+
+![](https://i.imgur.com/N3TzC8O.png)
+
+**Why use a pipeline?**
+1. You can execute two or more task in parallel.
+2. You can prompt for a user input.
+3. You can make use of conditional statements.
+4. You can also set different variavles.
+
+**Why not to use a freestyle job?**
+1. Limiting function of a plugin.
+2. High Maintenance Costs.   
+
+# Jenkinsfile
+jenkins have environmental variables: <br>
+http://34.234.35.40:8080/env-vars.html/
+<br>
+```
+post = executed logic after stages finished
+always {}
+success {}
+failure {}
+
+// This is a conditional statement
+when {
+	expression {
+	}
+}
+```
+### Using Stuffs in Jenkins
+1. Environment Variables: env-vars.hmtl
+```
+environment {
+	NEW_VERSION = '1.3.0'
+}
+
+can be referenced as $(NEW_VERSION)
+```
+2. Plugins
+```
+.credentials('ID')
+
+the id is the credentials in jenkins
+```
+3. Tools (needs to be installed)
+```
+tools {
+	maven 'Maven'
+}
+```  
+4. Paremeters // Here you can set what build version you are going to use.
+```
+parameters {
+	string(name:'VERSION', defaultValu blahb;ah , description: 'name')
+	choice(name:'VERSION', choices: ['1', '2'] , description: 'name')
+	booleanParam(name: "executeTests, defaulltValue: true, description:'Build with param')
+}
+```
+Sample Jenkinsfile // You can build with parameters // Start with a specific stage // Replay without changing the main repo // 
+```
+pipeline {
+    agent any
+  
+	parameters {
+		
+		choice(name: 'VERSION', choices:['1.1.0', '1.2.0', '1.3.0'], description: '')
+		booleanParam(name: 'executeTests', defaultValue: true, description: '')
+	}
+    stages {
+        stage("init") {
+            steps {
+              echo "Initialzing the APP"
+            }
+        }
+      
+	  
+	    stage("test") {
+			
+			when {
+				expression{
+					params.executeTests
+				}
+			}
+		
+            steps {
+              echo "testing the application"
+            }
+        }
+      
+        stage("build jar") {
+            steps {
+                echo "building the app"
+            }
+        }
+      
+      
+        stage("build image") {
+            steps {
+               echo "building the image"
+            }
+        }
+      
+      
+        stage("deploy") {
+            steps {
+               echo "deploying the image on rep"
+			   echo "deploying version: ${params.VERSION}"
+        }
+    }   
+}
+    
+    
+}
+```
+
+When we unchecked execute Tests, it become False. Meaning that the test block isn't executed. <br>
+![](https://i.imgur.com/l44eI61.png)
+
+### Using Groovy Script in Jenkins
+
+`Jenkinsfile`
+```
+def gv
+
+pipeline {
+    agent any
+	parameters {
+		choice(name: 'VERSION', choices:['1.1.0', '1.2.0', '1.3.0'], description: '')
+		booleanParam(name: 'executeTests', defaultValue: true, description: '')
+	}
+    stages {
+        stage("init") {
+            steps {
+				script {
+					gv = load "script.groovy"
+				}
+            }
+        }
+      
+	  
+	    stage("test") {
+			when {
+				expression{
+					params.executeTests
+				}
+			}
+            steps {			
+			script {			
+					gv.testApp()					
+				}              
+            }
+        }
+    
+	
+        stage("build jar") {
+            steps {
+				script {			
+					gv.buildApp()					
+				}          
+            }
+        }
+      
+        stage("deploy") {
+            steps {
+			script {			
+					gv.deployApp()					
+				}      
+        }
+  
+
+
+
+
+  }   
+}
+    
+    
+}
+```
+```script.groovy```
+```
+def buildApp() {
+
+echo 'building the application..!!!!'
+
+}
+
+def testApp() {
+
+echo 'testing the application..!!!!'
+
+}
+
+def deployApp() {
+
+echo 'deploying the application..'
+
+echo "deploying the application.. version ${params.VERSION}"
+
+}
+
+return this
+```
+### Input Parameters in Jenkins
+`Jenkinsfile`
+```
+def gv
+
+pipeline {
+    agent any
+	parameters {
+		choice(name: 'VERSION', choices:['1.1.0', '1.2.0', '1.3.0'], description: '')
+		booleanParam(name: 'executeTests', defaultValue: true, description: '')
+	}
+    stages {
+        stage("init") {
+            steps {
+				script {
+					gv = load "script.groovy"
+				}
+            }
+        }
+      
+	  
+	    stage("test") {
+			when {
+				expression{
+					params.executeTests
+				}
+			}
+            steps {			
+			script {			
+					gv.testApp()					
+				}              
+            }
+        }
+    
+	
+        stage("build jar") {
+            steps {
+				script {			
+					gv.buildApp()					
+				}          
+            }
+        }
+      
+        stage("deploy") {
+		
+			input {
+				message "Select the deployment environment for the system: "
+				ok "Done!"
+				parameters {
+					choice(name: 'ENV', choices:['dev', 'staging', 'production'], description: '')
+				}
+			}
+            steps {
+			script {			
+					gv.deployApp()			
+					echo "Deployed to ${ENV}"
+				}      
+        }
+  
+
+
+
+
+  }   
+}
+    
+    
+}
+
+```
+Then go jenkins UI then select for the env to use. However above the 'deploy' stage.
+
+### Adding two deployment environment in Jenkins
+`Jenkinfile`
+```
+def gv
+
+pipeline {
+    agent any
+	parameters {
+		choice(name: 'VERSION', choices:['1.1.0', '1.2.0', '1.3.0'], description: '')
+		booleanParam(name: 'executeTests', defaultValue: true, description: '')
+	}
+    stages {
+        stage("init") {
+            steps {
+				script {
+					gv = load "script.groovy"
+				}
+            }
+        }
+      
+	  
+	    stage("test") {
+			when {
+				expression{
+					params.executeTests
+				}
+			}
+            steps {			
+			script {			
+					gv.testApp()					
+				}              
+            }
+        }
+    
+	
+        stage("build jar") {
+            steps {
+				script {			
+					gv.buildApp()					
+				}          
+            }
+        }
+      
+        stage("deploy") {
+		
+			input {
+				message "Select the deployment environment for the system: "
+				ok "Done!"
+				parameters {
+					choice(name: 'ONE', choices:['dev', 'staging', 'production'], description: '')
+					choice(name: 'TWO', choices:['dev', 'staging', 'production'], description: '')
+				}
+			}
+            steps {
+			script {			
+					gv.deployApp()			
+					echo "Deployed to ${ONE}"
+					echo "Deployed to ${TWO}"
+				}      
+        }
+  
+
+
+
+
+  }   
+}
+    
+    
+}
+```
+
