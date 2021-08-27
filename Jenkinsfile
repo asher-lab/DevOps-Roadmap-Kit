@@ -1,67 +1,62 @@
-def gv
-
 pipeline {
     agent any
-	parameters {
-		choice(name: 'VERSION', choices:['1.1.0', '1.2.0', '1.3.0'], description: '')
-		booleanParam(name: 'executeTests', defaultValue: true, description: '')
+	tools { 
+		maven 'Maven'
 	}
-    stages {
-        stage("init") {
-            steps {
-				script {
-					gv = load "script.groovy"
-				}
-            }
-        }
-      
-	  
-	    stage("test") {
-			when {
-				expression{
-					params.executeTests
-				}
-			}
-            steps {			
-			script {			
-					gv.testApp()					
-				}              
-            }
-        }
-    
 	
-        stage("build jar") {
-            steps {
-				script {			
-					gv.buildApp()					
-				}          
-            }
-        }
-      
-        stage("deploy") {
-		
-			input {
-				message "Select the deployment environment for the system: "
-				ok "Done!"
-				parameters {
-					choice(name: 'ONE', choices:['dev', 'staging', 'production'], description: '')
-					choice(name: 'TWO', choices:['dev', 'staging', 'production'], description: '')
+    stages {
+	
+
+		stage("test") {
+			steps {
+				script {
+					echo "Testing the code.."
+					sh 'mvn test'
 				}
 			}
-            steps {
-			script {			
-					gv.deployApp()			
-					echo "Deployed to ${ONE}"
-					echo "Deployed to ${TWO}"
-				}      
-        }
-  
+		}
 
+		
+		stage("build jar") {
+			steps {
+				script {
+					echo "Bulding the application.."
+					sh 'mvn package'
+				}
+			}
+		}
 
+		stage("build image") {
+			steps {
+				script {
+					echo "Building docker image.."	
+					withCredentials([usernamePassword(credentialsId: 'dockerhub-asherlab', passwordVariable: 'PASSWORD', usernameVariable: 'USERNAME')]
+					
+						sh 'docker build -t java-maven-app:jma-2.2 .'
+						sh "echo $PASSWORD | docker login -u $USERNAME --password-stdin"
+						sh 'docker tag java-maven-app:jma-2.2 asherlab/java-maven-app:jma-2.2'
+						sh 'docker push asherlab/java-maven-app:jma-2.2'
+				}
+			}
+		}
 
+	}
+	
+		stage("deploy") {
+			steps {
+				script {
+					echo "Deploying the package.."					
+				}
+			}
+		}
 
-  }   
-}
-    
-    
+	}  
+	
+	
+	
+	
+	
+	
+	
+	
 }
