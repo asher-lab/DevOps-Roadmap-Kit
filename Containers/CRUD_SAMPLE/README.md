@@ -220,3 +220,78 @@ Done.
  run nginx on docker as well (optional)
  firewalld, ufw and ip tables
 ```
+
+kaushik config:
+```
+version: '3'
+
+networks:
+  monitoring:
+    driver: bridge
+
+volumes:
+  prometheus_data: {}
+
+services:
+  mysql:
+    image: mysql:5.6
+    ports:
+      - 3307:3306
+    environment:
+      - MYSQL_ROOT_PASSWORD=newpass
+      - 'MYSQL_DATABASE=kaushik'
+    volumes:
+      - ./mysqldump:/docker-entrypoint-initdb.d # mysqldump folder should contain db.sql
+    restart: unless-stopped
+
+  my-app-crud:
+    image: my-app-crud:1.0
+    restart: unless-stopped
+    network_mode: "host"
+
+  node-exporter:
+    image: prom/node-exporter:latest
+    container_name: node-exporter
+    restart: unless-stopped
+    volumes:
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /:/rootfs:ro
+    command:
+      - '--path.procfs=/host/proc'
+      - '--path.rootfs=/rootfs'
+      - '--path.sysfs=/host/sys'
+      - '--collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|etc)($$|/)'
+#    expose:
+#      - 9100
+    ports:
+     - "9091:9091"
+
+    networks:
+      - monitoring
+
+  promcontainer:
+    image: "prom/prometheus:latest"
+    container_name: prometheus
+    restart: unless-stopped
+    volumes:
+      - ./prometheus.yml:/home/ubuntu/prometheus/prometheus.yml
+      - prometheus_data:/home/ubuntu/prometheus/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+      - '--web.enable-lifecycle'
+#    expose:
+#      - 9090
+    networks:
+     - monitoring
+    ports:
+     - "9090:9090"
+
+  grafanacontainer:
+    image: "grafana/grafana"
+    ports:
+     - "3000:3000"
+```
