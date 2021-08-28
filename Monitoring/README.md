@@ -2,7 +2,7 @@
 ![](https://prometheus.io/assets/grafana_prometheus.png)
 https://www.reddit.com/r/homelab/comments/c2yfss/docker_monitoring_with_prometheus_und_grafana/
 ## Sample use cases
-![](https://docs.vmware.com/en/VMware-Tanzu-Kubernetes-Grid/1.3/vmware-tanzu-kubernetes-grid-13/images/images-monitoring-stack.png)
+![](https://i.imgur.com/mBxFxUZ.png)
 
 Prometheus gather metrics from exporters that must be running on the monitored hosts, stores them in it's own time series database, can display graphs of those series and trigger alerts. You can see it as a monitoring solution.
 
