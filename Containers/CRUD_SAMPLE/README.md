@@ -218,5 +218,5 @@ Done.
  ci/cd pipeline - via jenkins or gitlabci
  upload on a container repo like ECS - via jenkins or gitlabci
  run nginx on docker as well (optional)
- 
+ firewalld, ufw and ip tables
 ```
