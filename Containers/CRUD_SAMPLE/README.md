@@ -221,7 +221,7 @@ Done.
  firewalld, ufw and ip tables
 ```
 
-kaushik config:
+kaushik config on running prom, graf and crud app as well as mysql:
 ```
 version: '3'
 
