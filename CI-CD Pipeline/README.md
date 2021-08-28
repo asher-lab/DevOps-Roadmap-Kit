@@ -716,15 +716,32 @@ pipeline {
 }
 }
 ```
-Test -> Build Jar -> Build Docker Image -> Push Image to Dockerhub -> Deploy
+Performs: Test -> Build Jar -> Build Docker Image -> Push Image to Dockerhub -> Deploy <br>
+You can also make use of groovy script and create a function for every stage. <br>
 
+### Multi Branch Pipeline
+When you are working with a bugfix, patch or a feature, you will be working on a specific branch. And if all the tests are passed you are going to merge it into the main branch. You understand that you will not deploy your branch on a environment and IS only  the main aka master branch is suggested to do so. The priority is for you to pass all the test in the branches you are working on, since main/master is the most stable branch that one can deploy into a specific environment. (e.g. Test, Staging, Production), after that you can now merge your work with the master branch. (for your main aim is to finish the bugfix or feature, not on the development side). <br>
 
+**Create a Multibranch Pipeline**
+1. Create multibranch job.
+2. Add the repo. (jenkins will scan all the branches, if it can't find a Jenkinsfile, then it will just gonna skip them over)
 
+**Branch Based Logic**
+3. You can create your own branch based logic. For example, it will check if what branch you are currently building. Example if 'master' proceed to stage deploy, else skip.
+```
 
+when {
+	expression {
+		BRANCH_NAME = 'master'
+	}
+}
+```
+** Overview of Types of Jenkins Jobs**
+1.   Freestyle = good for single task.
+2. Pipeline = act as an umbrella for a Freestyle job, much better improvement than Chained Freestyle Job
+3. Multi Branch Pipeline = can work with different branches in Git.  You can implement many different Jenkinsfile at the same project.
 
-
-
-
+![](https://i.imgur.com/othRawM.png)
 
 
 
