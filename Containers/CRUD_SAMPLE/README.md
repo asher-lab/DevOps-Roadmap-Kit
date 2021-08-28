@@ -1,3 +1,4 @@
+
 # Simple CRUD JS APP
 Best practice.<br> **Ensure that no containers and images are installed.**
 ```
@@ -206,7 +207,7 @@ services: # images ur gonna install
 ```
 Run the container:
 ```
-docker-compose -f docker-compose.yaml up
+docker-compose -f docker-compose.yaml up -d
 ```
 ![](https://i.imgur.com/ivcnApO.png)
 Done.
@@ -214,6 +215,7 @@ Done.
  # # ** ...What I haven't yet done, yet optional: **
  ```
  data persistency
+ docker swarm
  https
  ci/cd pipeline - via jenkins or gitlabci
  upload on a container repo like ECS - via jenkins or gitlabci
@@ -221,7 +223,7 @@ Done.
  firewalld, ufw and ip tables
 ```
 
-kaushik config on running prom, graf and crud app as well as mysql:
+# Config on running prom, graf and crud app as well as mysql via a single docker compose:
 ```
 version: '3'
 
@@ -265,7 +267,7 @@ services:
 #    expose:
 #      - 9100
     ports:
-     - "9091:9091"
+     - "9091:9100"
 
     networks:
       - monitoring
@@ -275,8 +277,8 @@ services:
     container_name: prometheus
     restart: unless-stopped
     volumes:
-      - ./prometheus.yml:/home/ubuntu/prometheus/prometheus.yml
-      - prometheus_data:/home/ubuntu/prometheus/prometheus
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus_data:/etc/prometheus
     command:
       - '--config.file=/etc/prometheus/prometheus.yml'
       - '--storage.tsdb.path=/prometheus'
@@ -294,4 +296,33 @@ services:
     image: "grafana/grafana"
     ports:
      - "3000:3000"
+    networks:
+     - monitoring
+
 ```
+# Be sure that prometheus.yml is in your working directory, same as docker-compose.yaml
+`prometheus.yml`
+```
+global:
+  scrape_interval: 10s
+
+scrape_configs:
+  - job_name: 'prometheus_master'
+    scrape_interval: 5s
+    static_configs:
+      - targets: ['34.234.35.40:9090']
+
+  - job_name: 'node_exporter_centos'
+    scrape_interval: 5s
+    static_configs:
+      - targets: ['34.234.35.40:9091']
+
+```
+
+![](https://i.imgur.com/3LxnGMN.png)
+![](https://i.imgur.com/42TZnA6.png)
+
+Fixed:
+1. docker overlay for mysql 
+2. 9090,9091 in background = just changed localhost, not public ip on prometheus.yaml
+3.  node exporter not running = done
