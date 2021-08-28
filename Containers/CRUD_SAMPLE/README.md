@@ -326,3 +326,8 @@ Fixed:
 1. docker overlay for mysql 
 2. 9090,9091 in background = just changed localhost, not public ip on prometheus.yaml
 3.  node exporter not running = done
+
+Fix Bad gateway when adding data source:
+https://github.com/grafana/grafana/issues/14629
+
+**As a note, you also need to persists Grafana config so you will create a template, once you restarted the grafana container**
