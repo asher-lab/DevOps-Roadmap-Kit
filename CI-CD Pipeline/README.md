@@ -1,4 +1,3 @@
-
 ![](https://www.jenkins.io/images/logo-title-opengraph.png)
 **Jenkins** is a server that helps you in creating your CI/CD Pipeline. <br>
 Example use case:
@@ -743,8 +742,59 @@ when {
 
 ![](https://i.imgur.com/othRawM.png)
 
+## Credentials with Jenkins
+Can be defined in three ways:
+1. Global (Will be Available throughout the jenkins job)
+2. System(Will only be available to the plugins) 
+3. Creation of credentials only with the job  scope ( will only exists in the Multibranch Pipeline, this will create another store exlusively for that project). Use case for this one, is you can hide credentials between teams.
+
+## Jenkins Shared Library
+To allow existing teams to  reuse the same logic in the ci/cd pipeline. Will be much faster to implement because you have same logic defined in the process. 
+<br>
+
+```
+For example in microservices:
+
+microservices-user-auth
+microservices-payment
+microservices-balance-chekcer
+...
+microservices-security-ssl-checker
+
+Assuming that all of this are written in Java, meaning that there are similar logic througout the process. For example, in building or deploying it, then there is a simular strucuture for
+all of this. This similarity can be used when creating a pipeline that can be used by other 
+teams to intergrate with their workflow.
+
+
+#Make it available to all servers, by adding repo to global pipeline libraries
+"Be sure to implement versioning so that changes to the pipeline would be tracked down
+and not being a cause of error because of changes. "
+
+```
+
+## Webhooks
+
+When changes on a repo (gitlab) like push or comment, etc. and triggering events will automatically notify a web app (e.g. Jenkins) to automatically build the job without manual intervention. 
+
+Builds can be:
+1. Automatic 
+2. Scheduled (high resources consumption tests, selenium)
+3. Manually ( via production)
+You decide if you want to automate the build process.
 
 
 
+## Versioning
 
+Major.Minor.Patch ( 3.9.2)
+You can implement a pipeline that will automatically version the jar for example, that you are building. (e.g. will create a new pom.xml, or package.json in npm ) also you can implement versioning with docker image. <br>
 
+Using webhooks in Versioning: <br>
+When you trigger a repo, it will notify Jenkins, and Jenkins would automatically increment the pom.xml or package.json on the repo and push it again (by changing pom.xml) <br>
+
+### Git -> Commit -> Jenkins -> Detect pom.xml or package.json version -> Increment pom.xml then push again to repo, then build
+
+## Important points:
+1. Versioning should always be a part of the CI/CD process and not to be done manually.
+2. When you ssh into a server, you lost.
+3. Best code is no code at all.
