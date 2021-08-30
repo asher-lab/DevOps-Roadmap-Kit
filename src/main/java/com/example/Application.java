@@ -1,4 +1,4 @@
-package com.tutorialworks.demos.hellorestjava;
+package com.example;
 
 import io.undertow.Undertow;
 import io.undertow.server.HttpHandler;
@@ -7,7 +7,7 @@ import io.undertow.util.Headers;
 
 /**
  * Hello world!
- * Returns a simple web page on port 8080.
+ * Returns a simple web page on port 3000.
  */
 public class Application {
 
