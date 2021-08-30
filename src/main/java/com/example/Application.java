@@ -1,27 +1,36 @@
-package com.example;
+package com.tutorialworks.demos.hellorestjava;
 
-import org.springframework.boot.SpringApplication;
-import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import javax.annotation.PostConstruct;
+import io.undertow.Undertow;
+import io.undertow.server.HttpHandler;
+import io.undertow.server.HttpServerExchange;
+import io.undertow.util.Headers;
 
-@SpringBootApplication
+/**
+ * Hello world!
+ * Returns a simple web page on port 8080.
+ */
 public class Application {
 
-    public static void main(String[] args)
-    {
-        SpringApplication.run(Application.class, args);
-    }
+    public static void main(String[] args) {
+        Undertow server = Undertow.builder()
+                // Set up the listener - you can change the port/host here
+                .addHttpListener(3000, "0.0.0.0")
 
-    @PostConstruct
-    public void init()
-    {
-        Logger log = LoggerFactory.getLogger(Application.class);
-        log.info("Java app started");
-    }
+                .setHandler(exchange -> {
+                    // Sets the return Content-Type to text/html
+                    exchange.getResponseHeaders()
+                            .put(Headers.CONTENT_TYPE, "text/html");
 
-    public String getStatus() {
-        return "OK";
+                    // Returns a hard-coded HTML document
+                    exchange.getResponseSender()
+                            .send("<html>" +
+                                    "<body>" +
+                                    "<h1>Hello, world!</h1>" +
+                                    "</body>" +
+                                    "</html>");
+                }).build();
+
+        // Boot the web server
+        server.start();
     }
 }
