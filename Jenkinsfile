@@ -48,7 +48,7 @@ pipeline {
 					echo "Deploying the package.."
    				sshagent(['EC2-Creds']) { 
    				// some block 
-   				sh "scp docker-compose.yaml ec2-user@ip://home/ec2-user"
+   				sh "scp docker-compose.yaml ec2-user@35.174.172.62://home/ec2-user"
    				sh "ssh -o StrictHostKeyChecking=no ec2-user@35.174.172.62 ${dockerComposeCmd}"
    				
 					
