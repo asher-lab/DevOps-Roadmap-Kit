@@ -48,7 +48,7 @@ pipeline {
 					echo "Deploying the package.."
 					sshagent(['EC2-Creds']) { 
 					// some block 
-					sh "ssh -0 StrictHostKeyChecking=no ec2-user@34.234.35.40 ${dockerCmd}"
+					sh "ssh -o StrictHostKeyChecking=no ec2-user@34.234.35.40 ${dockerCmd}"
 					
 					}
 										
