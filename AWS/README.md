@@ -215,9 +215,31 @@ pipeline {
 7. Done || As an info, Java Maven runs on port 8080 default when building an app. 
 
 
-Use case:
-8. Demonstrate that you can deploy docker containers on an EC2. And is good for smaller projects. 
-9. 
+Use case:<br>
+Demonstrate that you can deploy docker containers on an EC2. And is good for smaller projects. 
+
 # Project : Deploy Image from DockerHub to EC2 instance so it will run on that instance. Via Jenkins. Part 2
 
+When you want to deploy a full pack of software, like databases, web application, event listener, etc. then you need to make use of docker-compose :<br>
+Architecture:<br>
+Have docker-compose.yaml in your repo. Then perform command: on jenkins 
+ ```
 
+	stage("deploy") {
+				steps {
+					script {
+					def dockerCmd = '```
+docker-compose -f docker-compose.yaml up -d
+```'
+					echo "Deploying the package.."
+					sshagent(['EC2-Creds']) { 
+					// some block 
+					sh "ssh -o StrictHostKeyChecking=no ec2-user@34.234.35.40 ${dockerCmd}"
+					
+					}
+										
+					}
+				}
+	}
+
+```
