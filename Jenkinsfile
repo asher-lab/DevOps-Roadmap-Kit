@@ -44,7 +44,14 @@ pipeline {
 	stage("deploy") {
 				steps {
 					script {
-						echo "Deploying the package.."					
+					def dockerCmd = 'docker run -p 3000:3080 asherlab/java-maven-app:jma-2.2'
+					echo "Deploying the package.."
+					sshagent(['EC2-Creds']) { 
+					// some block 
+					sh "ssh -0 StrictHostKeyChecking=no ec2-user@34.234.35.40 ${dockerCmd}"
+					
+					}
+										
 					}
 				}
 			}
