@@ -126,6 +126,11 @@ sudo via jenkins docker container as a root user:
 cd /var/jenkins_home
 cd /var/jenkins_home/jobs/job-name/builds/
 
+on localmachine
+cd /var/lib/docker/volumes/jenkins_home
+
+
+
 ```
 Cloned remote repo are **stored** in : <br>
 ```
