@@ -44,13 +44,22 @@ pipeline {
 	stage("deploy") {
 				steps {
 					script {
-					def dockerComposeCmd = 'docker run -p 3000:3080 asherlab/java-maven-app:jma-2.2 -d'
-					echo "Deploying the package.."
+				
+				//login on remote server (ec2 - deployment server) so it can access the repo
+				withCredentials([usernamePassword(credentialsId: 'dockerhub-asherlab', passwordVariable: 'PASSWORD', usernameVariable: 'USERNAME')]){		
+						sh "echo $PASSWORD | docker login -u $USERNAME --password-stdin"
+				   }
+				   
+				//define function				
+				def dockerComposeCmd = 'docker run -p 3000:3080 asherlab/java-maven-app:jma-2.2 -d'
+				echo "Deploying the package.."
+				
    				sshagent(['EC2-Creds']) { 
    				// some block 
    				sh "scp -rp -i ../keys/asher.pem docker-compose.yaml ec2-user@3.89.26.116://home/ec2-user"
    				sh "ssh -o StrictHostKeyChecking=no ec2-user@3.89.26.116 ${dockerComposeCmd}"
    				
+				
 					
 					}
 										
