@@ -46,10 +46,14 @@ pipeline {
 					script {
 				
 				//login on remote server (ec2 - deployment server) so it can access the repo
+				// in this case we need to pass the command remotely.
 				withCredentials([usernamePassword(credentialsId: 'dockerhub-asherlab', passwordVariable: 'PASSWORD', usernameVariable: 'USERNAME')]){		
-						sh "echo $PASSWORD | docker login -u $USERNAME --password-stdin"
+						def CredentialsPass = "ssh echo ${PASSWORD} | docker login -u ${USERNAME} --password-stdin"
+						//sh "ssh echo $PASSWORD | docker login -u $USERNAME --password-stdin"
+						sh "ssh -o StrictHostKeyChecking=no ec2-user@3.89.26.116 ${CredentialsPass}"
 				   }
-				   
+				// or you can just login on the remote deployment server
+				
 				//define function				
 				def dockerComposeCmd = 'docker run -p 3000:3080 asherlab/java-maven-app:jma-2.2 -d'
 				echo "Deploying the package.."
