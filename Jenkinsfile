@@ -50,7 +50,7 @@ pipeline {
 				// or you can just login on the remote deployment server
 				
 				//define function				
-				def dockerComposeCmd = 'docker run -p 3000:3080 asherlab/java-maven-app:jma-2.2 -d'
+				def dockerComposeCmd = 'docker-compose -f docker-compose.yaml up -d'
 				echo "Deploying the package.."
 				
    				sshagent(['EC2-Creds']) { 
