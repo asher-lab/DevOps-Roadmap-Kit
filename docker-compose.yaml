@@ -1,6 +1,8 @@
+
 version: '3.8'
 services:
-	java-maven-app:
-		image: asherlab/java-maven-app:jma-2.2
-		ports:
-			- 8080:8080
+     java-maven-app:
+        image: asherlab/java-maven-app:jma-2.2
+        ports:
+          - 8080:8080
+
