@@ -360,3 +360,11 @@ On the issue of Permission Denied, specify the key
 ```
 scp -rp -i ../keys/asher.pem docker-compose.yaml ec2-user@3.89.26.116://home/ec2-user
 ```
+
+### You can also add a shell script in replace of a hard coded in Jenkinsfile
+```
+def ShellCmd = 'bash ./shell-script.sh'
+sh "scp -rp -i ../keys/asher.pem shell-script.sh ec2-user@3.89.26.116://home/ec2-user"
+```
+### You can also implement versioning in your docker image
+1. You can pass a value when passing to docker push to increment version.
