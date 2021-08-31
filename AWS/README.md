@@ -58,7 +58,11 @@ IF NOT enabled, then docker ps -a will show no port.
 IF TRUE, enabled, then docker ps -a will show port
 ```
 
-# Project : Deploy Image from DockerHub to EC2 instance so it will run on that instance. Via Jenkins. Part 1
+# Project : Deploy Image from DockerHub to EC2 instance so it will run on that instance. Via Jenkins. Part 1 = DOCKER RUN
+
+## Details: This will deploy the image on ANOTHER ec2 instance, separate from where you are sshing..  Your development env will test, build, and publish ... while the other machine is used for deploying the app. ( 2 machines) 
+
+## Use case: good for small projects, but if it involves thousands of cointainers, then a tool is  need to orchestrate it.
 Architecture: <br>
 Build App -> Build Image -> Push to Private Repo -> Deploy it to EC2
 
@@ -201,7 +205,7 @@ pipeline {
 					echo "Deploying the package.."
 					sshagent(['EC2-Creds']) { 
 					// some block 
-					sh "ssh -o StrictHostKeyChecking=no ec2-user@34.234.35.40 ${dockerCmd}"
+					sh "ssh -o StrictHostKeyChecking=no ec2-user@35.174.172.62 ${dockerCmd}"
 					
 					}
 										
@@ -218,7 +222,7 @@ pipeline {
 Use case:<br>
 Demonstrate that you can deploy docker containers on an EC2. And is good for smaller projects. 
 
-# Project : Deploy Image from DockerHub to EC2 instance so it will run on that instance. Via Jenkins. Part 2
+# Project : Deploy Image from DockerHub to EC2 instance so it will run on that instance. Via Jenkins. Part 2 . == DOCKERCOMPOSE . Part of adding docker login to deployment server.
 
 When you want to deploy a full pack of software, like databases, web application, event listener, etc. then you need to make use of docker-compose :<br>
 Architecture:<br>
@@ -228,13 +232,14 @@ Have docker-compose.yaml in your repo. Then perform command: on jenkins
 	stage("deploy") {
 				steps {
 					script {
-					def dockerCmd = '```
+					def dockerComposeCmd = '```
 docker-compose -f docker-compose.yaml up -d
 ```'
 					echo "Deploying the package.."
 					sshagent(['EC2-Creds']) { 
 					// some block 
-					sh "ssh -o StrictHostKeyChecking=no ec2-user@34.234.35.40 ${dockerCmd}"
+					sh "scp docker-compose.yaml ec2-user@ip://home/ec2-user"
+					sh "ssh -o StrictHostKeyChecking=no ec2-user@35.174.172.62 ${dockerComposeCmd}"
 					
 					}
 										
@@ -242,4 +247,116 @@ docker-compose -f docker-compose.yaml up -d
 				}
 	}
 
+```
+Jenkinsfile below:
+```
+pipeline {
+    agent any
+	tools { 
+		maven 'maven-3.8.2'
+	}
+	
+    stages {
+	
+
+		stage("test") {
+			steps {
+				script {
+					echo "Testing the code.."
+					sh 'mvn test'
+				}
+			}
+		}
+
+		
+		stage("build jar") {
+			steps {
+				script {
+					echo "Bulding the application.."
+					sh 'mvn package'
+				}
+			}
+		}
+
+		stage("build image") {
+			steps {
+				script {
+					echo "Building docker image.."	
+					withCredentials([usernamePassword(credentialsId: 'dockerhub-asherlab', passwordVariable: 'PASSWORD', usernameVariable: 'USERNAME')]){
+					
+						sh 'docker build -t java-maven-app:jma-2.2 .'
+						sh "echo $PASSWORD | docker login -u $USERNAME --password-stdin"
+						sh 'docker tag java-maven-app:jma-2.2 asherlab/java-maven-app:jma-2.2'
+						sh 'docker push asherlab/java-maven-app:jma-2.2'
+				   }
+			   }	
+			}
+		}
+
+	stage("deploy") {
+				steps {
+					script {
+				
+				//login on remote server (ec2 - deployment server) so it can access the repo
+				
+				// or you can just login on the remote deployment server
+				
+				//define function				
+				def dockerComposeCmd = 'docker-compose -f docker-compose.yaml up -d'
+				echo "Deploying the package.."
+				
+   				sshagent(['EC2-Creds']) { 
+   				// some block 
+   				sh "scp -rp -i ../keys/asher.pem docker-compose.yaml ec2-user@3.89.26.116://home/ec2-user"
+   				sh "ssh -o StrictHostKeyChecking=no ec2-user@3.89.26.116 ${dockerComposeCmd}"
+   				
+				
+					
+					}
+										
+					}
+				}
+			}
+}
+}
+
+
+```
+
+### Issue: The authenticity of the host can't be established: && SSH best pratices  on limiting who can access (via ssh) ur server. Jenkins: host key verification failed. 
+Since this one is a clean and a new IP, this will prompt our terminal to verify the host, but it is not a security best practice to use and disable `StrictHostKeyChecking` since it will bypass some security measure.
+
+Temporary way: After you perform this, this will be added to known hosts
+```
+ssh -i ../keys/asher.pem ec2-user@3.89.26.116
+```
+
+Anyway, it is also good to not set any write permissions, in adding to `known_hosts` in /root/.ssh. So no one can access ur system even though they know ur pem file.
+```
+chmod 400 .ssh
+chmod a=r .ssh or also yourkey.pem <- read by all although will not work
+
+issue:
+	Cannot compile, docker build can't read .pem file. has no permission
+SOLUTION:
+Let Jenkins be the owner and not root:
+chown jenkins:jenkins asher.pem
+and set keys out the repo/working folder:
+../keys/asher.pem <--- outside of the branch
+
+it is currently in: /var/lib/docker/volumes/jenkins_home/_data/workspace/keys/asher.pem
+
+our repo/working folder:
+/var/lib/docker/volumes/jenkins_home/_data/workspace/_jenkins-branch-multi-AWSproject
+
+ANother issue:
+Warning: A secret was passed to "sh" using Groovy String interpolation, which is insecure.
+		 Affected argument(s) used the following variable(s): [PASSWORD]
+		 See [https://jenkins.io/redirect/groovy-string-interpolation](https://jenkins.io/redirect/groovy-string-interpolation) for details.
+
+SOLUTION: best way is to docker login on the remote EC2 deployement server.
+```
+On the issue of Permission Denied, specify the key
+```
+scp -rp -i ../keys/asher.pem docker-compose.yaml ec2-user@3.89.26.116://home/ec2-user
 ```
