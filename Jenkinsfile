@@ -44,7 +44,7 @@ pipeline {
 	stage("deploy") {
 				steps {
 					script {
-					def dockerComposemd = 'docker run -p 3000:3080 asherlab/java-maven-app:jma-2.2 -d'
+					def dockerComposeCmd = 'docker run -p 3000:3080 asherlab/java-maven-app:jma-2.2 -d'
 					echo "Deploying the package.."
    				sshagent(['EC2-Creds']) { 
    				// some block 
