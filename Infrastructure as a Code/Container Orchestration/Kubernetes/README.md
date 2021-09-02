@@ -71,10 +71,54 @@ USE CASE:
 When there is an expected or unexpected downtime -- it will jeopardize the business.
 ```
 You can replicate a node, so that the services that isn't working will be redirect to the working node. 
-Of which a service can act as a load balance, and a permanent IP as well. 
+- Of which a service can act as a **load balancer**, 
+-  and a **permanent IP as well**. 
+- In deployment you can scale up and down. <br>
 <br>
-To create a replica of a node, you need to define a blueprint of it. It is a concept in K8s called **Deployment**.
-In deployment you can scale up and down. <br>
-**Deployment** is an abstration on top of pods.
 
-[](https://i.imgur.com/Bpu7ENr.png)
+To create a replica of a node, you need to define a blueprint of it. It is a concept in K8s called **Deployment**.
+
+
+**Deployment** is an abstraction on top of replica  set -> pods.
+
+![](https://i.imgur.com/Bpu7ENr.png)
+
+- Deployment is best used for stateless applications. If a component failed (e.g. my-app) which is stateless, the users will be redirected to the working node. 
+- **Stateful Set** - refers to applications which data are critical and should be access, stored and retrieve everytime it is need. If one of the db fails, then a statefuk set will handle the allocation of db from the stateless apps, ensuring that no data inconsistencies and can be scale up and down and be replicated and synchronized with each backup db. 
+
+!!! However, working with DB via Stateful set is not easy. That's why:
+### DBs are hosted outside of the Kubernetes Cluster and let stateless application run on the K8s server.   e.g. like: external databases
+
+## Kubernetes Architecture
+There are two (2) roles in K8s architecture = Master and Workers
+ - Workers node do the actual work.
+ - Master Nodes to the managing of the worker nodes.
+ 
+ In **worker nodes**, there must be three processes needs to be installed.
+ 
+ 1. Container runtime. The containerization technology like containerd or cri o.
+ 2. Kubelet - interact with BOTH container runtime (containerd) and the pod. Responsible for starting the pod with the container under it.
+ - It also assign necessary resources what the pod needs.
+ 3.  Kube Proxy - responsible for forwarding requests. In and Out of the cluser. Responsible for networking related content.
+
+**Master Nodes** -  all performs management of the pods, scheduling pods, monitoring the health, also rescheduling and restarting the pods, also merging a new node on the existing nodes.
+<br>
+In **master nodes** , there must be four processes needs to be installed:
+
+1.  API Server - act as a cluster gateway.
+	- for gatekeeping, safekeeping and authentication of the cluster.
+	
+	- Requests -> API Server -> Validate requests -> other processes -> POD
+A request can be pod recreation, reporting, etc.
+2. Scheduler 
+	-   it is a mechanism the JUST DECIDES where a new POD will be allocated.
+	- As per Kubernetes.io The Kubernetes scheduler is **a control plane process which assigns Pods to Nodes**. The scheduler determines which Nodes are valid placements for each Pod in the scheduling queue according to constraints and available resources. The scheduler then ranks each valid Node and binds the Pod to a suitable Node.
+	- Not to be confused with **KUBELET** who have the power to schedule a pod in every node.
+
+3. Controller Manager - It detects cluster state changes so it can act  on it. *(e.g. spawning a new pod)
+![](https://miro.medium.com/max/1200/0*r3DyRvMZJ_LUC9w4.png)
+4. etcd= _as per learnk8s.io etcd_ is where _Kubernetes_ stores all of the information about a cluster's state; in fact, it's the only stateful part of the entire _Kubernetes_ control plane. It doesn't store db apps. Only K8s processes.
+
+
+Tasks: 
+https://v1-18.docs.kubernetes.io/docs/tasks/
