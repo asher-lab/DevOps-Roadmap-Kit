@@ -369,3 +369,7 @@ sh "scp -rp -i ../keys/asher.pem shell-script.sh ec2-user@3.89.26.116://home/ec2
 ```
 ### You can also implement versioning in your docker image
 1. You can pass a value when passing to docker push to increment version.
+
+
+## ISSUE: permission denied, you are trying to delete a directory remotely, as a jenkins user, try this]
+https://stackoverflow.com/questions/37903334/jenkins-build-failure-shell-command-permission-denied
