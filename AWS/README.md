@@ -359,6 +359,7 @@ SOLUTION: best way is to docker login on the remote EC2 deployement server.
 On the issue of Permission Denied, specify the key
 ```
 scp -rp -i ../keys/asher.pem docker-compose.yaml ec2-user@3.89.26.116://home/ec2-user
+Ensure that it is in /home/user not /home, since you don't have permission to write on the root folder
 ```
 
 ### You can also add a shell script in replace of a hard coded in Jenkinsfile
