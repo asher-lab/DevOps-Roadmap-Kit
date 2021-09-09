@@ -43,5 +43,9 @@ In minikube, perform this: `minikube service [service name]`
 <br>
 <br>
 
+
+
+![](https://i.ibb.co/wdd4zRd/1.png)
+
 ### You can use Nginx if you want to make use of a remote IP.
 ### Demonstrate how to create a cluster of K8s - now I'm getting the glimpse of Microservices. :)
