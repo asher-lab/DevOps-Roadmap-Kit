@@ -320,5 +320,45 @@ spec:
  port: 80
  targetPort: 8080
 ```
+## Namespaces
+- A way of organizing resources. It uses namespaces to easily distinguish resources.
+- It is called a group inside a cluster.
+```
+kubectl get namespace
+```
+In default there are available namespace:
+1. kube-system = compose of kubernetes system processes.
+2. kube-public = all accessible information can be found here without authentication.
+`kubectl cluster-info`
+`kubectl cluster-info dump`
+3. kube-node-lease = monitors the availability of node.
+4. default = if you are starting with K8s, all resources that you create are all located here.
+
+To create namespaces. there are two ways:
+1. Command Line:
+` kubectl create namespace my-namespace`
+2. Configuration Map:
+
+### The question now: Why use namespaces? Mainly because of the following benefits:
+1. Resources are easily distinguishable since there would be namespaces.
+e.g. ( Database_NS, which contains db like postgres, mysql) , also (Monitoring_NS, which contains prometheus and grafana) and (Elastic Stack or Nginx Ingress servers)
 
 
+2. Team Synchronization: For example the team have their own isolated environments to work on but they employ a single Pipeline job to build an image. An overwriting issue will appear if teams are working on the same application since they deploy it on the same pipeline. Namespaces helps by labelling what teams are currently making the push and provide appropriate versioning based on the teams Namespace. More of like an identification. (E.g. TEAMB_NS, the data that pushes the changes will be logged as TEAMB_NS)
+
+3. Resource Sharing. If two teams or more are working on an application ( Staging and Development Team) then they need tools (e.g. test data, which prompts the usage of databases) it would be wasteful if per team would have created their own instance of db. Rather than using that approach, two teams can share a same resource where they can test their own data, provided they will use different db name for that)
+
+4. Blue/Green Deployment= In case of their would be changes or upgrades needs to be made in the production environment, avoiding downtime is necessary. So in order to keep the users from accessing the service, it needs to be available even to the update process. This works by floating/deploying a new instance that redirect the same requests and processes on the existing framework until such time that the upgrade is complete on the other machine.) **Blue-Green Deployment in K8s**
+
+5. Limit the resources and access. A specific can have its own isolated environment. But never it can interfere with other teams env. Also, you can limit the amount of CPU and RAM or storage. 
+
+
+**Side Notes**
+- volume and nodes can't be put into a namespace, they need to be available globally.
+`kubectl api-resources --namespaced=false`
+`kubectl api-resources --namespaced=true`
+- if you didn't specify a namespace then it would be going into default
+- In config with no NS yet, try `apply -f *.yaml --namespace=my-namespace`
+- But it is recommended to have namespace in the configmap. Namespaces needs to be in `metadata`
+
+To change active namespace: You can try kubens
