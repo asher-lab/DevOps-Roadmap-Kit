@@ -362,3 +362,102 @@ e.g. ( Database_NS, which contains db like postgres, mysql) , also (Monitoring_N
 - But it is recommended to have namespace in the configmap. Namespaces needs to be in `metadata`
 
 To change active namespace: You can try kubens
+
+# Kubernetes Service
+One of my favorite topics in K8s.
+## Why?
+- Permanent and Stable, pod IP address are ephemearal.
+- Load Balancing, Services uses a built in process to distribute traffic between pods/nodes.
+- Loosely coupled architecture, because you can reference a external service easily.
+
+Example:
+![](https://i.imgur.com/hCRdQLn.png)
+- communication within cluster. (Internal Configuration)
+- communication outside cluster. (External Configuration)
+
+ ## Types
+ ### 1. Cluster IP Service Type
+ - default configuration
+ - Example Scenario:
+ - You have two apps with 2 ports opened ( since they have are performing specific tasks, 1.) ms-one 2.) log-collector, which are opened in ports 3000 and 9000 respectively).
+ - This means that these two ports are accessible and open inside the pod.
+![](https://i.imgur.com/LMJr5m6.png)
+- It also has its own IP address from the allocated IP address per worker node. 
+- ![](https://i.imgur.com/651XlPF.png)
+-  To get the IP address of the pods in the cluster you can: `kubectl get pod -o wide`
+- If there would be two replicas or more, then it will just start within another IP address from the same Node2 range ( 10.2.2.x) or another IP address from a different Node1 range (10.2.1.x)
+#### Now. How does an external traffic forwarded to a service?
+
+![](https://i.imgur.com/OUUUSZR.png)
+- This is handled by the service (e.g. Cluster IP aka Internal Service) . The Ingress ( Incoming traffic is handled by the service). Remember that a **Service** is one of the most important component in Kubernetes, (just like a pod) but it is not a process, but **an abstraction layer that represent IP address**
+- WHICH MEANS? Service gets an IP address and also a PORT of which you can access. Meaning that **Ingress** will handle the request on IP 10.128.8.64 and PORT 3200.
+- **This is what makes service accessible inside the cluster**
+- ![](https://i.imgur.com/PsyclXf.png)
+- As you can see here: 
+- **Ingress** knows the service because it reference it using the **name: microservice-one-service and port 3200** on its config which is **serviceName: microservice-one-service and servicePort 3200**
+- ![](https://i.imgur.com/wF8yezc.png)
+
+#### Now. How does a service know what Pod does it forward the requests to? In case of multiple ports opened into a pod on what port it forward the requests to?
+![](https://i.imgur.com/xMoqX8M.png)
+
+1. **How does a service know what Pod does it forward the requests to?**
+- Service identifies a pod via selectors.
+- Pods should have this as a label and matched with selectors. 
+![](https://i.imgur.com/djSYnE9.png)
+- Service config (which comprise of selector) and Deployment config (which comprise of labels) must be present with each other so that they can communicate.
+- ![](https://i.imgur.com/wvlkv79.png)
+- ![](https://i.imgur.com/eEmcMfR.png)
+- **THIS IS HOW SERVICE WILL KNOW WHAT POD WILL IT FORWARD THE REQUESTS TO**
+
+2. **How does a service know what Port of the Pod does it forward the requests to?**
+It works by setting the config on Service ( which comprise of targetPort ) in case 3000 and it will 1.) get what Pods are its endpoints because of selector and labels. 2.) and ports which is 3000. **It will randomly select a Pod, since service also acts as a load balancer)
+- ![](https://i.imgur.com/kOV2wz8.png)
+- **NOTE** when you create a service it keeps track which endpoints/pods are a member of that service.
+- `kubectl get endpoints`
+- target port needs to be right in Service config. It needs to know what port the container is listening. 
+- port can be anything in Service config.
+
+**Implementing multi service set up**
+- A pod communicates with a Service ( MongoDB Service) which has 2 endpoints.
+![](https://i.imgur.com/MonABV6.png)
+- targetPort is  the Pods Port, port can be anything not necessarily 27017
+![](https://i.imgur.com/H1FR5iK.png)
+- Also, selector must point to the label
+- ![](https://i.imgur.com/8NGDgHu.png)
+
+
+**Multiport Services**
+- There are 2 things happening here:
+- 1. A pod is communicating with mongodb application. (port 27017) -- which communicates with the database via the Service.
+- 2. Prometheus is communication with mongo-db exporter to read the data (port 9216) -- which communicates with the data that is logged to the mongodb-exporter.
+![](https://i.imgur.com/xAZ8yuT.png)- In case of **multiple ports**, you need to specify the name in the config.
+- ![](https://i.imgur.com/qZNRSZD.png)
+
+ ### 2. Headless Service Type
+In **stateful service** such as databases (postgres, mysqldb or elasticsearch) there are instances that Pods are not identical and they offer different data. In this case you need to communicate with the Pod directly. 
+Example: Master perform reading and writing, but the worker node can only perform reading which users can only look up into ( you can define the level of accessibility using **headless**), but this can be done via **cluster IP services to anyway ( the accessibility abstraction)**.
+![](https://i.imgur.com/eZ1prpH.png)
+
+## There are 3 service types
+of which you need to define the type when creating
+![](https://i.imgur.com/QBfuxMb.png)
+
+### 3. Nodeport Service Type
+- Creates a service that is accessible through a static port on each worker node in a cluster.
+- As an example in **ClusterIP**, there is no external traffic that can pass through our Service barrier.
+- But, in **NodePort**, there are external traffic that can pass through our cluster directly. External traffic has an access to to fix port on each worker node. 
+- **Incase of ingress, it will come directly to NodePort service.** 
+- Nodeport has range of 30k to 37767, anything outside this range won't be accepted.
+- ![](https://i.imgur.com/wqKdlFb.png)
+![](https://i.imgur.com/p0UOquW.png)
+### 4. LoadBalancer Service Type
+- Loadbalancers can be defined via cloud providers.
+- ![](https://i.imgur.com/QS2tIgi.png)
+- Loadbalancer as type in the config.
+- Also has nodeport in it defined. **Alert! Don't use nodeport since it is insecure**
+- ![](https://i.imgur.com/3GfAPwQ.png)
+- Connection of Nodeport and ClusterIP
+- ![](https://i.imgur.com/CV6QwnE.png)
+- Always configure ingress and loadbalancer in production grade setting
+- ![](https://i.imgur.com/Q3b6W96.png)
+
