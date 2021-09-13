@@ -461,3 +461,137 @@ of which you need to define the type when creating
 - Always configure ingress and loadbalancer in production grade setting
 - ![](https://i.imgur.com/Q3b6W96.png)
 
+
+
+<br>
+
+## Ingress
+
+1. What is Ingress?
+2. YAML config 
+3. When to use Ingress>
+4. Ingress controller
+
+### External Service vs. Ingress
+- In **External Service** you access the app you want by putting the port.
+- In **Ingress** instead of an external service, where you open your IP and PORT, in Ingress your address and port is not opened.
+ - In **Ingress**, once the request is made from the Browser, it will redirect it to an Internal Service (Cluster IP) which is itself, can't be accessed externally.
+ - ![](https://www.nginx.com/wp-content/uploads/2020/04/NGINX-Plus-Ingress-Controller-1-7-0_ecosystem.png)
+### Configuration Comparison:
+External Service. Here nodeport is where the client can access it. In this case it is 35010. Kind defined as `service`
+```
+apiVersion: v1
+kind: Service
+metadata:
+	name: myapp-external-service
+spec:
+	selector:
+		app: myapp
+	type: LoadBalancer
+	ports:
+	   - protocol: TCP
+	     port: 8080
+	     targetPort: 8080
+	     nodePort: 35010
+```
+**Internal Service.** Here you have the kind defined as `Ingress`. Of which the host `myapp.com` when typed it into the browser,  it will redirect the traffic to a service named `myapp-internal-service`
+- In `paths` , you can specify where it is 
+- `http` is the kind of protocol you are routing to. it can  be `ftp`?
+```
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+	name: myapp-ingress
+spec:
+	rules:
+	- host: myapp.com
+	  http:
+		  paths:
+		  - backend:
+			  serviceName: myapp-internal-service
+			  servicePort: 8080
+```
+### Relation of Internal Service and Ingress
+![](https://i.imgur.com/zX4knHe.png)
+
+### How to configure Ingress in your Cluster?
+= Routing it alone directly Ingress->Service will not work. You need an**implementation for Ingress**. Called:
+- Ingress Controller, needs to be installed.
+- It is another pod that run in your kubernetes cluster, it evaluates and processes ingress rules.
+- It manages redirection.
+- It is an entrypoint to cluster.
+- **There are many third party implementation of Ingress Controller.**
+- In K8s there is **Kubernetes Nginx Ingress Controller**
+
+**Different Implementations**
+- **You need an ENTRYPOINT**
+- It can be a loadbalancer from third party solutions like AWS. It act as an entry point to your cluster.
+![](https://i.imgur.com/bgBcDOc.png)
+- It can be a proxy server. This act as an entry point to your cluster.
+- ![](https://i.imgur.com/yoX4XyP.png)
+- This works by having a proxy as an entry point then redirect the request to the Ingress Controller, which then the controller will checks for the Ingress rules.
+- All application here can't be requested externally, they must pass through the Controller, Ingress, and Proxy.
+- ![](https://i.imgur.com/Ke3A0KQ.png)
+
+### Configure Ingress Controller in Minikube
+```
+chmod 666 /var/run/docker.sock
+minikube start
+minikube ip
+minikube addons enable ingress # starts that K8s Nginx implementation of Ingress controller
+kubectl get pod -n kube-system
+kubectl get pod -n ingress-nginx
+```
+### Create Ingress Rule
+```
+kubectl get ns
+minikube addons enable dashboard
+kubectl get ns
+```
+Configure ingress rule to dashboard so you can access it via domain name.
+```
+kubectl get all -n kubernetes-dashboard
+```
+`dashboard-ingress.yaml`
+This will forward all request the is coming from dashboard.com to the service `kubernetes-dashboard`.
+```
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: dashboard-ingress
+  namespace: kubernetes-dashboard
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /
+spec:
+  rules:
+  - host: dashboard.com
+  - http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: kubernetes-dashboard
+            port:
+              number: 80
+```
+Then apply,
+`kubectl apply -f dashboard-ingress.yaml`
+`kubectl get ingress` # works in default namespace
+or:
+`kubectl get ingress --all-namespaces`
+`kubectl get ingress --namespace=kubernetes-dashboard`
+to delete: 
+`kubectl delete -f dashboard-ingress.yaml`
+To check which IP your cluster is working:
+`kubectl cluster-info`
+Make some changes:
+```
+nano /etc/hosts
+```
+or you can just follow the tutorial here:
+https://kubernetes.io/docs/tasks/access-application-cluster/ingress-minikube/
+
+## What happened to Ingress?
+Tasks: 
+https://v1-18.docs.kubernetes.io/docs/tasks/
