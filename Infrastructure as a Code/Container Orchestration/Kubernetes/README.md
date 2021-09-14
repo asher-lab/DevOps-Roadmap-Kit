@@ -287,38 +287,40 @@ kubectl delete -f nginx-deployment.yaml
 apiVersion: apps/v1
 kind: Deployment
 metadata:
- name: nginx-deployment
- labels:
- app: nginx
+  name: nginx-deployment
+  labels:
+    app: nginx
 spec:
- replicas: 2
- selector:
- matchLabels:
- app: nginx
- template:
- metadata:
- labels:
- app: nginx
- spec:
- containers:
- - name: nginx
- image: nginx:1.16
- ports:
- - containerPort: 8080
+  replicas: 3
+  selector:
+    matchLabels:
+      app: nginx
+  template:
+    metadata:
+      labels:
+        app: nginx
+    spec:
+      containers:
+      - name: nginx
+        image: nginx:1.14.2
+        ports:
+        - containerPort: 80
+
 ```
 nginx-service.yaml
 ```
 apiVersion: v1
 kind: Service
 metadata:
- name: nginx-service
+  name: nginx-service
 spec:
- selector:
- app: nginx
- ports:
- - protocol: TCP
- port: 80
- targetPort: 8080
+  selector:
+    app: nginx
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 8080
+
 ```
 ## Namespaces
 - A way of organizing resources. It uses namespaces to easily distinguish resources.
@@ -592,6 +594,86 @@ nano /etc/hosts
 or you can just follow the tutorial here:
 https://kubernetes.io/docs/tasks/access-application-cluster/ingress-minikube/
 
-## What happened to Ingress?
+## Ingress - Flow
+1. Requesting for dashboard.com 
+2. To Ingress Controller 
+3. Then Ingress controller evaluate the rules defined in `dashboard-ingress.yaml`
+4. And forward the request to service. `kubectl get svc` which is `kubernetes dashboard`.
+
+## Ingress - Default Backend Tutorial
+`kubectl describe ingress dashboard-ingress -n kubernetes-dashboard`
+Output:
+>`Default backend:  default-http-backend:80 (<error: endpoints "default-http-backend" not found>)`
+^ means that if there is no return, then `default-http-backend:port 80` is used to satisfy this request.
+
+**Whenever there is a request coming to the cluster that it is not mapped on any `backend` ( meaning no rule for mapping the request to a service ), default backend is used.**
+>404 page not found
+
+**You can create a custom error page / or redirection to your home page. (Tutorial)**
+CONFIGURING DEFAULT BACKEND IN INGRESS
+1. You need to create a service called `service/default-http-backend created` 
+`default-backend-service.yaml`. 
+Then apply this one.
+`kubectl apply -f default-backend-service.yaml`
+```
+apiVersion: v1
+kind: Service
+metadata:
+   name: default-http-backend
+   namespace: kubernetes-dashboard
+spec:
+   selector:
+      app: default-response-app
+   ports:
+      - protocol: TCP
+        port: 80
+        targetPort: 8080
+```
+2. You need to create a pod aka deployment. Which has the label of `default-response-app` since the selector the service is `default-response-app`. It has targetport of `8080`
+
+> Use this link to create a ready made template https://medium.com/alterway/how-to-custom-your-default-backend-on-kubernetes-nginx-controller-9b38048e10c0
+
+Then apply this one.
+`kubectl apply -f default-backend-deployment.yaml`
+```
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  namespace: kubernetes-dashboard
+  name: default-response-app
+  labels:
+    app.kubernetes.io/name: default-response-app
+    app.kubernetes.io/part-of: ingress-nginx
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: default-http-backend
+      app.kubernetes.io/part-of: ingress-nginx
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: default-http-backend
+        app.kubernetes.io/part-of: ingress-nginx
+    spec:
+      containers:
+      - name: default-http-backend
+        image: asherlab/custom-default-backend:1.0
+        ports:
+        - containerPort: 8080
+        # Setting the environment variable DEBUG we can see the headers sent 
+        # by the ingress controller to the backend in the client response.
+        env:
+        - name: DEBUG
+          value: "false"
+```
+Useful cmd for debugging
+```
+kubectl describe ingress dashboard-ingress -n kubernetes-dashboard
+kubectl get deployments --namespace=kubernetes-dashboard
+kubectl get pods --namespace=kubernetes-dashboard
+kubectl get service --namespace=kubernetes-dashboard
+```
+
 Tasks: 
 https://v1-18.docs.kubernetes.io/docs/tasks/
