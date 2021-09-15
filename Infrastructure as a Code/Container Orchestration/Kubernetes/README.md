@@ -587,6 +587,8 @@ to delete:
 `kubectl delete -f dashboard-ingress.yaml`
 To check which IP your cluster is working:
 `kubectl cluster-info`
+`curl -v http://192.168.49.2/ -H -L 'Host: dashboard.com'` - https://stackoverflow.com/questions/50562639/ingress-domain-based-routing-is-not-working-in-browser-but-im-able-to-curl-the
+
 Make some changes:
 ```
 nano /etc/hosts
@@ -674,6 +676,10 @@ kubectl get deployments --namespace=kubernetes-dashboard
 kubectl get pods --namespace=kubernetes-dashboard
 kubectl get service --namespace=kubernetes-dashboard
 ```
+For Ingress you can:
+1. Set custom backend error page
+2. Add TLS SSL on your config
+3. Create subdomains and URLs (e.g.  facebook.com/profile)
 
 Tasks: 
 https://v1-18.docs.kubernetes.io/docs/tasks/
