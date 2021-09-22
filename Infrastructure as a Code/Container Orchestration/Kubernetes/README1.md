@@ -573,7 +573,7 @@ This is where the values will come from:
 ![](https://i.imgur.com/J5PGeXG.png)
 
 
-# DEMO: Install Stateful App using Helm
+# DEMO: Install Stateful App using Helm - MongoDB and Express
 What to do: Deploy an managed K8s cluster on AWS.
 Here we will:
 - Deploy a replicated database and configure its persistence
@@ -727,3 +727,263 @@ spec:
 - `helm uninstall mongodb`
 - Volumes are still there if got deleted. You can delete via Linode : Volumes and Cluster as well.
 - With helm, no need for cleanup.
+
+# DEMO: Deploy Private Docker Image/App on Kubernetes Cluster
+### Steps to pull private image from private registry.
+1. Create Secret component. Contains credentials for Docker registry.
+2. Configure Deployment/Pod to use Secret using imagePullSecrets
+
+```
+cat .docker/config.json
+the resulting output is needed in our secret.
+
+minikube ssh
+login docker / aws ec2 here inside minikube
+```
+`docker-secret.yaml`
+```
+apiVersion: v1
+kind: Secret
+metadata:
+  name: my-registry-key
+data:
+  .dockerconfigjson: base64-encoded-contents-of-.docker/config.json-file
+type: kubernetes.io/dockerconfigjson
+
+```
+
+
+```
+scp -i $(minikube ssh-key docker@$(minikube ip):.docker/config.json .docker/config.json
+cat .docker/config.json
+```
+What we did:
+- Perform docker login
+- Copy the config.json file so you can use kubectl
+- ![](https://i.imgur.com/wojpn3u.png)
+
+### Another way to create a docker config.json secret! ( This config json secret comprise ur creds for docker private repo)
+![](https://i.imgur.com/qcW8SLj.png)
+Then perform `kubectl get secret` you can use both of this one in your deployment.
+
+Use case  for 2 types of way in creating secret:
+1. First option, Better if there are multiple sources of docker images.
+2. Second option, for single one only
+
+### Deployment Step, with the Secret - imagePullSecrets
+`my-app-deployment.yaml`
+```
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: my-app
+  labels:
+    app: my-app
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: my-app
+  template:
+    metadata:
+      labels:
+        app: my-app
+    spec:
+      imagePullSecrets:
+      - name: my-registry-key
+      containers:
+      - name: my-app
+        image: privat-repo/my-app:1.3
+        imagePullPolicy: Always
+        ports:
+          - containerPort: 3000
+
+```
+1. `kubectl apply -f my-app-deployment.yaml`
+2. `kubectl get pod` <--- you can that it is running.
+3. Debug, `kubectl describe pod <pod name>`
+
+### This is how you configure secret to pull image from a Docker repo / nexus / aws
+
+- Reminder that the secret must be on the same namespace as the application.
+- two ways in creating a secret:
+- 1. docker login manually to generate config.json 
+- 2. kubectl create secret = to create dockerregistry type
+- And in deployment, you use `imagePullSecrets` to use secrets `kubectl get secret` to pull image from docker registry.
+
+
+
+# Operator
+Have a config with knowledge on how to deploy those application. Without the need for human intervention.
+- has control loop mechanism, that observes and apply changes
+- makes use of CRD's component
+- domain/specific knowledge. 
+- Remember that Kubernetes can't fully automate the process natively of **stateful** apps, only **stateless** apps.
+- Who create? Those with domain specific knowledge. 
+- operatorhub.io, operatoSDK
+
+
+# Demo : Setup Prometheus Monitoring in Kubernetes Cluster
+How to deploy the different parts of it in the cluster?
+1. Creating all configuration YAML files on your own. Which inlcludes secrets, configmap, etc. and be able to execute them in right order. This means you need to find a good a step by step guide.
+2. Using an operator. Think of operator as a manager of all the prometheus components that you create. 
+- manages the combination of all components as one unit. ( e.g. sts, deploy, svc)
+- To proceed, you need to find a Prometheus Operator like in OperatorHub
+3. Using Helm chart to deploy operator. 
+- To proceed, helm will be the one for initial install and operator will  be the one to manage it.
+
+
+### Install Prometheus-operator
+Be sure to remove all things in the minikube. like runnning pods, etc. 
+```bash
+kubectl delete deployment --all
+minikube delete
+minikube start
+minikube start --memory 5000
+
+kubectl get nodes
+kubectl drain <nodeName> 
+kubectl uncordon <nodeName>
+```
+
+###### [](#add-repos)add repos
+
+```
+helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+helm repo add stable https://charts.helm.sh/stable
+helm repo update
+```
+
+###### [](#install-chart)install chart
+
+```
+helm install prometheus prometheus-community/kube-prometheus-stack
+```
+
+###### [](#install-chart-with-fixed-version)install chart with fixed version
+
+```
+helm install prometheus prometheus-community/kube-prometheus-stack --version "9.4.1"
+```
+
+###### [](#link-to-chart)Link to chart
+
+[[https://github.com/prometheus-community/helm-charts/tree/main/charts/kube-prometheus-stack](https://github.com/prometheus-community/helm-charts/tree/main/charts/kube-prometheus-stack)]
+ Deletion:
+https://phoenixnap.com/kb/helm-delete-deployment-namespace
+Best tutorial:
+https://k21academy.com/docker-kubernetes/prometheus-grafana-monitoring/
+```
+Perform checks:
+kubectl get all
+```
+- DaemonSet, run in all worker nodes. 
+- NodeExporter daemon set, translate worker node metrics into readable prometheus metrics so that it can be save and store by prometheus.
+- KubeMetrics, gives data of Kubernetes cluster including API server, pods, etc .
+```
+$ kubectl get all
+NAME                                                         READY   STATUS    RESTARTS   AGE
+pod/alertmanager-prometheus-kube-prometheus-alertmanager-0   2/2     Running   0          12m
+pod/prometheus-grafana-8557485f94-v5x6d                      2/2     Running   0          12m
+pod/prometheus-kube-prometheus-operator-769b9bb6f5-44ns2     1/1     Running   0          12m
+pod/prometheus-kube-state-metrics-696cf79768-cklhp           1/1     Running   0          12m
+pod/prometheus-prometheus-kube-prometheus-prometheus-0       2/2     Running   0          12m
+pod/prometheus-prometheus-node-exporter-nvmqr                1/1     Running   0          12m
+
+NAME                                              TYPE        CLUSTER-IP       EXTERNAL-IP   PORT(S)                      AGE
+service/alertmanager-operated                     ClusterIP   None             <none>        9093/TCP,9094/TCP,9094/UDP   12m
+service/kubernetes                                ClusterIP   10.96.0.1        <none>        443/TCP                      15m
+service/prometheus-grafana                        ClusterIP   10.102.136.247   <none>        80/TCP                       12m
+service/prometheus-kube-prometheus-alertmanager   ClusterIP   10.105.243.44    <none>        9093/TCP                     12m
+service/prometheus-kube-prometheus-operator       ClusterIP   10.96.245.218    <none>        443/TCP                      12m
+service/prometheus-kube-prometheus-prometheus     ClusterIP   10.107.235.205   <none>        9090/TCP                     12m
+service/prometheus-kube-state-metrics             ClusterIP   10.103.66.33     <none>        8080/TCP                     12m
+service/prometheus-operated                       ClusterIP   None             <none>        9090/TCP                     12m
+service/prometheus-prometheus-node-exporter       ClusterIP   10.100.9.191     <none>        9100/TCP                     12m
+
+NAME                                                 DESIRED   CURRENT   READY   UP-TO-DATE   AVAILABLE   NODE SELECTOR   AGE
+daemonset.apps/prometheus-prometheus-node-exporter   1         1         1       1            1           <none>          12m
+
+NAME                                                  READY   UP-TO-DATE   AVAILABLE   AGE
+deployment.apps/prometheus-grafana                    1/1     1            1           12m
+deployment.apps/prometheus-kube-prometheus-operator   1/1     1            1           12m
+deployment.apps/prometheus-kube-state-metrics         1/1     1            1           12m
+
+NAME                                                             DESIRED   CURRENT   READY   AGE
+replicaset.apps/prometheus-grafana-8557485f94                    1         1         1       12m
+replicaset.apps/prometheus-kube-prometheus-operator-769b9bb6f5   1         1         1       12m
+replicaset.apps/prometheus-kube-state-metrics-696cf79768         1         1         1       12m
+
+NAME                                                                    READY   AGE
+statefulset.apps/alertmanager-prometheus-kube-prometheus-alertmanager   1/1     12m
+statefulset.apps/prometheus-prometheus-kube-prometheus-prometheus       1/1     12m
+```
+- Out of the box configuration already `kubectl get configmap`
+```
+$ kubectl get configmap
+NAME                                                           DATA   AGE
+kube-root-ca.crt                                               1      13m
+prometheus-grafana                                             1      11m
+prometheus-grafana-config-dashboards                           1      11m
+prometheus-grafana-test                                        1      11m
+prometheus-kube-prometheus-alertmanager-overview               1      11m
+prometheus-kube-prometheus-apiserver                           1      11m
+prometheus-kube-prometheus-cluster-total                       1      11m
+prometheus-kube-prometheus-controller-manager                  1      11m
+prometheus-kube-prometheus-etcd                                1      11m
+prometheus-kube-prometheus-grafana-datasource                  1      11m
+prometheus-kube-prometheus-k8s-coredns                         1      11m
+prometheus-kube-prometheus-k8s-resources-cluster               1      11m
+prometheus-kube-prometheus-k8s-resources-namespace             1      11m
+prometheus-kube-prometheus-k8s-resources-node                  1      11m
+prometheus-kube-prometheus-k8s-resources-pod                   1      11m
+prometheus-kube-prometheus-k8s-resources-workload              1      11m
+prometheus-kube-prometheus-k8s-resources-workloads-namespace   1      11m
+prometheus-kube-prometheus-kubelet                             1      11m
+prometheus-kube-prometheus-namespace-by-pod                    1      11m
+prometheus-kube-prometheus-namespace-by-workload               1      11m
+prometheus-kube-prometheus-node-cluster-rsrc-use               1      11m
+prometheus-kube-prometheus-node-rsrc-use                       1      11m
+prometheus-kube-prometheus-nodes                               1      11m
+prometheus-kube-prometheus-persistentvolumesusage              1      11m
+prometheus-kube-prometheus-pod-total                           1      11m
+prometheus-kube-prometheus-prometheus                          1      11m
+prometheus-kube-prometheus-proxy                               1      11m
+prometheus-kube-prometheus-scheduler                           1      11m
+prometheus-kube-prometheus-statefulset                         1      11m
+prometheus-kube-prometheus-workload-total                      1      11m
+prometheus-prometheus-kube-prometheus-prometheus-rulefiles-0   28     11m
+```
+`kubectl get secrets` <-- here you have set up secrets for grafana, prometheus, and operator, certificates etc..
+- This shows that Helm is useful.
+- CRD, custom resource definition.
+**What's inside?**
+```
+kubectl get statefulset
+kubectl describe statefulset <name> > prom.yaml
+kubectl describe statefulset <name> alert.yaml
+kubectl get deployment
+kubectl describe deployment <name> oper.yaml
+you can also try ->> -o yaml
+```
+In prometheus, you can configure:
+- alerting rules, so it can send email when specific metrics are triggered.
+- configurations are already pre made , you don't have to.
+- How to configure prom rules are what important.
+- Also configuring alert manager. 
+
+Then check for service and forward it.
+```
+kubectl get service
+kubectl get deployment
+kubectl get pod
+
+# Check for port when grafana is running
+kubectl logs prometheus-grafana-8557485f94-v5x6d
+kubectl logs prometheus-grafana-8557485f94-v5x6d -c grafana
+
+# You will notice it listen on port 3000
+kubectl port-forward deployment/prometheus-grafana 30000
+
+# To query different stuff, you can make use of the promql
+```
