@@ -91,7 +91,7 @@ Summary:
 ![](https://i.imgur.com/Hb2KOos.png)
 
 
-# Create EKS Cluster manually - User Interface of AWS
+# Create EKS Cluster manually - User Interface of AWS - Nodegroup
 ### A. Create EKS IAM role
 Will give EKS permission on AWS.
 ```
@@ -193,18 +193,156 @@ When creating EC2 instances, all needed packages, like containerd and kube proxy
 To match resource requirements
 ```
 Save costs in your infrastructure. 
+
+EKS doesn't automatically scale resources for us. It needs to be configured first!
+There is a tool in Kuberentes called: Autoscaler
+
+Autoscaler: 
+S: If underutilized, the pods that are on a instance, will be moved onto another instance so it won't incur some costs.
+S: If over utilized, it will get the config from Autoscaling group to see what's maximum size, then create if its possible.
+
+1. Need Autoscaling group which we already have.
+2. Create custom policy and attach to node group IAM role.
+custom-policy.json contents:::::
+//start//
+
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Action": [
+                "autoscaling:DescribeAutoScalingGroups",
+                "autoscaling:DescribeAutoScalingInstances",
+                "autoscaling:DescribeLaunchConfigurations",
+                "autoscaling:DescribeTags",
+                "autoscaling:SetDesiredCapacity",
+                "autoscaling:TerminateInstanceInAutoScalingGroup",
+                "ec2:DescribeLaunchTemplateVersions"
+            ],
+            "Resource": "*",
+            "Effect": "Allow"
+        }
+    ]
+}
+
+
+//end//
+Name that as: node-group-autoscale-policy
+Then attached this policy to nodegroup IAM role. (eks-node-group-role )
+3. Deploy K8s Autoscaler.
+kubectl apply -f https://raw.githubusercontent.com/kubernetes/autoscaler/master/cluster-autoscaler/cloudprovider/aws/examples/cluster-autoscaler-autodiscover.yaml
+
+TO debug: kubectl delete -f https://raw.githubusercontent.com/kubernetes/autoscaler/master/cluster-autoscaler/cloudprovider/aws/examples/cluster-autoscaler-autodiscover.yaml
+
+Change the: <YOUR CLUSTER NAME> to your cluster name // or is it?
+
+kubectl get deployment -n kube-system cluster-autoscaler
+
+kubectl edit deployment -n kube-system cluster-autoscaler
+then edit on annotations:
+> cluster-autoscaler.kubernetes.io/safe-to-evict: "false"
+> <YOUR CLUSTER NAME> to your cluster name
+> - --balance-similar-node-groups
+> - --skip-nodes-with-system-pods=false
+> change to autoscaler version to kubernetes version: 1.18.3
+
+
+kubectl get pods -n kube-system
+Output:
+aws-node-ls7hn                        1/1     Running   0          3m41s
+aws-node-vsq8c                        1/1     Running   1          3m52s
+cluster-autoscaler-5b94df99b9-jhk64   1/1     Running   0          21s
+coredns-c79dcb98c-vhv62               1/1     Running   0          6m55s
+coredns-c79dcb98c-x2ccm               1/1     Running   0          6m55s
+kube-proxy-fwtsm                      1/1     Running   0          3m52s
+kube-proxy-s7pkn                      1/1     Running   0          3m41s
+
+kubectl get pod cluster-autoscaler-5b94df99b9-jhk64 -n kube-system -o wide
+kubectl logs cluster-autoscaler-5b94df99b9-jhk64 -n kube-system
+kubectl get nodes
+
+# provisioning new instance can be slow.
 ```
 ### H. Deploy our application to our EKS cluster.
+```
+Deploy nginx application and LoadBalancer
 
+nginx-config.yaml contents:
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nginx
+spec:
+  selector:
+    matchLabels:
+      app: nginx
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: nginx
+    spec:
+      containers:
+      - name: nginx
+        image: nginx
+        ports:
+        - containerPort: 80
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: nginx
+  labels:
+    app: nginx
+spec:
+  ports:
+  - name: http
+    port: 80
+    protocol: TCP
+    targetPort: 80
+  selector:
+    app: nginx
+  type: LoadBalancer
+```
+We are creating a service which of type Loadbalancer. We are creating an external service, where there is an AWS loadbalancer attached to it. Kubernetes will create cloud native load balancer. So we can access the cluster on loadbalancer endpoint.
 
+```
+kubectl apply -f nginx-config.yaml
+kubectl get pods
+kubectl get service
+You will also see on your EC2 console that a LB was automatically created.
+```
+DNS Name, is the endpoint where it is accessible:
+(e.g. a35c4a2620f3e443c9a716dac211f162-901558892.us-east-1.elb.amazonaws.com (A Record)
+![](https://i.imgur.com/42ZDlL6.png)
 
+```
+Interesting:
 
+nginx        LoadBalancer   10.100.106.19   a35c4a2620f3e443c9a716dac211f162-901558892.us-east-1.elb.amazonaws.com   80:31821/TCP   46m
 
+Here you can see 80:31821
+80 - port of the service
+31821 - nodeport of the service, port that opens on the ec2 node itself.
+```
+![](https://i.imgur.com/6WQ504Z.png)
+![](https://i.imgur.com/aopyBLF.png)
+**Load Balances**, will be scheduled on the public subnet
+Instances run on at least 2 availability zones.
 
+**Increasing the replicas**
+```
+kubectl edit deployment nginx
+Then scale up to replicas from 1 to 20.
 
+kubectl get pod
 
+I tried scaling it to 80 replicas.
+kubectl logs cluster-autoscaler-5b94df99b9-sp27t -n kube-system -f
+```
 
-
+# Create EKS Cluster manually - User Interface of AWS - Fargate
 
 
 
