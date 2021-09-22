@@ -89,3 +89,135 @@ Summary:
 2. EKS
 3. ECR = storing images 
 ![](https://i.imgur.com/Hb2KOos.png)
+
+
+# Create EKS Cluster manually - User Interface of AWS
+### A. Create EKS IAM role
+Will give EKS permission on AWS.
+```
+1. Create role for EKS. Use EKS - CLuster.
+2. Role name: EKS-cluster-role
+3. Create Role.
+```
+### B. Create VPC for Worker Nodes
+To know where worker nodes to run.
+```
+Q: Why we need to create a VPC?
+A: Because EKS cluster need a special configuration for that VPC.
+A: Default VPC not optimized for EKS cluster. Not on best practices.
+A: Subnets are configure by NACLs. Firewall rules need to be configured, necessary for master nodes to communicate with worker nodes.
+A: Configure public and private subnets
+A: When you create LoadBalancer Service (Private Subnet) it will dynamically deploy a Elastic Load Balancer (Public Subnet)
+A: Through IAM role you give K8s permissions to change VPC configurations.
+A: E.g. giving Nodeport Service permissions to open port on worker node.
+
+AWS has template when setting up the VPC.
+A: AWS Cloudformation.
+1. Create Stack
+2. Prerequisite - Prepare template | Template is ready
+3. Specify template | Add S3 url 
+Here you can create an all public or all private subnet. Also can be a mixture of both.
+4. get data here -> https://docs.aws.amazon.com/eks/latest/userguide/create-public-private-vpc.html
+5.  If you need to edit / modify, then go, example is going to edit the range of your IP.
+6. Stack name : eks-worker-node-vpc-stack
+7. Create Stack and wait for like 10 minutes.
+8. Go to output tab, and remember to get all those information. 
+```
+### C. Create EKS cluster ( master nodes )
+Set of master nodes that are managed by AWS.
+```
+name: eks-cluster-test
+k8s-v: 1.18
+role: eks-cluster-role ( from role you have created )
+
+Secret encryption = Is a KMS, use for encrypting Secrets. You can enable here.
+1. Specify the right network.
+2. Specify the right SG.
+3. To access API Server can be: Public, Hybrid or Private. 
+Public = can run kubectl from your desktop. worker and master nodes works publicly.
+Private = accessible only within our VPC. worker and master nodes works privately.
+Public and Private = You work remotely for kubectl, while worker and master nodes talk in Private.
+4. Control Plane Logging = none
+5. Create and wait for a few minutes like 30 minutes
+```
+### D. Connect kubectl with EKS cluster
+Connect to your cluster via your smartphone or computer.
+```
+sudo apt  install awscli
+
+aws configure list
+
+# create config file locally
+aws eks update-kubeconfig --name eks-cluster-test
+
+cat .kube/config
+clear
+
+kubectl get nodes
+kubectl get namespaces
+kubectl cluster-info
+```
+### E. Create EC2 IAM role for Node group
+Create worker nodes for EKS cluster. Create role to give permissions to call AWS API for EC2 service.
+```
+You can run them on NodeGroup or Fargate
+Let's try to run NodeGroup aka EC2 instances
+
+Kubelet on worker nodes ( ec2 instances ) need permission
+
+1. Role for EC2 service
+Add: AmazonEKSWorkerNodePolicy
+Add: AmazonEC2ContainerRegistryReadOnly ( read only access to ECR ) , in order to pull images
+Add: AmazonEKS_CNI_Policy (Container Network Interface ), so that pods can communicate with each other.
+2. Name of Role: eks-node-group-role
+
+
+
+```
+### F. Create Node Group and attach to EKS cluster
+Group of EC2 instances that will run as a worker node in the Kubernetes cluster. And attach it to EKS cluster. Now we have worker node attached to the master node.
+```
+Go to compute tab of EKS.
+1. Add nodegroup to EKS.
+2. Name: eks-node-group
+3. Add the role.
+4. Choose what EC2 instance. I select t3.micro
+5. NodeGroup scaling config: Min: ( How many is the least running node ) Max: ( max running number of nodes ) Desired Size : ( wanted size ) 
+6. Select Node Group : 2,2,2
+7. Specify Network | Configure SSH Access to Nodes | Allow SSH remote access from ALL
+8. kubectl get nodes
+```
+When creating EC2 instances, all needed packages, like containerd and kube proxy and kubectl are all installed automatically!
+
+### G. Configure Auto Scaling
+To match resource requirements
+```
+Save costs in your infrastructure. 
+```
+### H. Deploy our application to our EKS cluster.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ 
