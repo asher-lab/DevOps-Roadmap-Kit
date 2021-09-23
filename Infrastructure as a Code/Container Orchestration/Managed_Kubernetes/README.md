@@ -1,4 +1,4 @@
-# Managed Kubernetes Service - AWS
+# 🚵🏻‍♀️ Managed Kubernetes Service - AWS
 FUN FACT: Did you know that half of all Kubernetes that are running are all managed by AWS.
 
 To learn:
@@ -8,7 +8,7 @@ To learn:
 - Create EKS cluster with eksctl ( CLI ).
 - Build Pipeline to deploy EKS cluster (Continuous Deployment)
 
-# Container Services on AWS
+# 🚵🏻‍♀️ Container Services on AWS
 **Elastic Container Service vs Elastic Kubernetes Service** clusters
 also 
 **EC2 vs Fargate** workers
@@ -34,7 +34,7 @@ Which virtual machines these containers are running?
 - ECS hosted on EC2 instances.
 - Where you need to create, join and maintain EC2 instances. Also Docker runtimes and ECS Agent must be installed. **You need to take care of your server.** *You have full access to your server.* 
 
-## **ECS+Fargate**
+## 🚵🏻‍♀️ **ECS+Fargate**
 Alternative to EC2, managed by AWS. 
 - Serverless way to launch containers.
 - Provisions server on demand depends on the determined capacity needed.
@@ -54,7 +54,7 @@ If you want more flexibility, then use EC2. Especially if you need system servic
 - IAM for Users and Permissions
 - VPC for networking.
 
-## EKS + AWS
+## 🚵🏻‍♀️ EKS + AWS
 **Amazon EKS**, managing  K8s cluster on AWS infrastructure. 
 - More Helm charts.
 
@@ -91,7 +91,7 @@ Summary:
 ![](https://i.imgur.com/Hb2KOos.png)
 
 
-# Create EKS Cluster manually - User Interface of AWS - Nodegroup
+# 🚵🏻‍♀️Create EKS Cluster manually - User Interface of AWS - Nodegroup
 ### A. Create EKS IAM role
 Will give EKS permission on AWS.
 ```
@@ -342,20 +342,316 @@ I tried scaling it to 80 replicas.
 kubectl logs cluster-autoscaler-5b94df99b9-sp27t -n kube-system -f
 ```
 
-# Create EKS Cluster manually - User Interface of AWS - Fargate
+
+# 🚵🏻‍♀️Create EKS Cluster manually - User Interface of AWS - Fargate
+
+**serverless,** no ec2 instances in our AWS account.
+**1 pod per virtual machine**
+- Fargate has no support for stateful applications yet.
+- Fargate has no support for DaemonSets.
+
+### A. Create IAM role for fargate
+```
+Create role
+EKS
+EKS- Fargate Pod
+Role name: eks-fargate-role
+```
+### B. Create Fargate profile
+- pod selection rule
+- specificies which Pods should use Fargate when they launched
+- lets us define criteria how pod is scheduled.
+```
+name: dev-profile
+add role : eks-fargate-role
+
+Q: Why we need a VPC if there is nothing to be running there?
+A: Pods will have an IP address from our subnet IP range.
+
+- Important! Remove the public subnet and leave only private.
+
+ Add nginx-config.yaml inside of it, namespace which is dev
+Also add some Match labels
+
+nginx-config.yaml contents:
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nginx
+  namespace: dev
+spec:
+  selector:
+    matchLabels:
+      app: nginx
+      profile: fargate
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: nginx
+        profile: fargate
+    spec:
+      containers:
+      - name: nginx
+        image: nginx
+        ports:
+        - containerPort: 80
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: nginx
+  labels:
+    app: nginx
+spec:
+  ports:
+  - name: http
+    port: 80
+    protocol: TCP
+    targetPort: 80
+  selector:
+    app: nginx
+  type: LoadBalancer
 
 
+Then on AWS:
+Key: profile
+Value: fargate
 
+Namespaces and configuring labels, will match our pods, if it will gonna provision 
+via Fargate or nah.
+```
+Use cases of Fargate and Nodegroup
 
+![](https://i.imgur.com/Xw5f1Wi.png)
+![](https://i.imgur.com/Xw5f1Wi.png)
+### C. Deploy Pod through Fargate
+```
+kubectl create ns dev
+kubectl apply -f nginx-config.yaml
+kubectl get pod -n dev
+kubectl get nodes
+kubectl get pod -n dev -o wide
+```
+You can create many fargate profile.
 
+### Clean Up
+```
+remove nodegroup
+remove fargate profile
+delete the cluster
+delete cloudformation stack too: Delete eks-worker-node-vpc-stack?
+optional ( delete the roles )
+```
 
-
-
-
-
-
-
-
-
-
+# 🚵🏻‍♀️Create EKS Cluster with eksctl
+What we've done before, is hard to replicate.
+- **eksctl, eks control for automating creation of cluster.**
+- Remember that clusters will be created with **default** parameters
+### Install eksctl on your machine
+```
+curl --silent --location "https://github.com/weaveworks/eksctl/releases/latest/download/eksctl_$(uname -s)_amd64.tar.gz" | tar xz -C /tmp
+sudo mv /tmp/eksctl /usr/local/bin
+eksctl version
+```
+### Add credentials to eksctl
+```
+aws configure
+aws configure list
+```
+### Create eks cluster
+eksctl.io
+ ```
+ eksctl create cluster \
+ --name demo-cluster \
+ --version 1.17 \
+ --region us-east-1 \
+--zones us-east-1a,us-east-1b \
+ --nodegroup-name demo-nodes \
+ --node-type m5.large \
+ --nodes 2 \
+ --nodes-min 2 \
+ --nodes-max 2 
+ ```
+ Here, you can also pass your ssh keys. Also you can create your own config file:
+ then apply: https://eksctl.io/usage/creating-and-managing-clusters/
  
+`eksctl create cluster -f cluster.yaml`
+
+ ```
+apiVersion: eksctl.io/v1alpha5
+kind: ClusterConfig
+
+metadata:
+  name: demo-cluster
+  region: us-east-1
+
+nodeGroups:
+  - name: ng-1
+    instanceType: m5.large
+    desiredCapacity: 2
+    volumeSize: 20
+    ssh:
+      allow: false # will use ~/.ssh/id_rsa.pub as the default ssh key
+ ```
+
+After running the command `kubectl` will be configured right away since .kube/config is already configured.
+
+```
+kubectl get pod
+kubectl get nodes
+```
+
+### Explore AWS Account
+```
+1. You will see that roles are created.
+2. You will see a VPC is also created.
+```
+
+TO DELETE:
+eksctl delete cluster --region=us-east-1 --name=demo-cluster
+# 🚵🏻‍♀️ Deploy to EKS Cluster from Jenkins Pipeline
+Here we are going to deploy from Jenkins Pipeline
+
+Perform this inside the jenkins container.
+1. Install jenkins as a container 
+```
+docker run -p 8080:8080 -p 5000:5000 -d \
+-v jenkins_home:/var/jenkins_home \
+-v /var/run/docker.sock:/var/run/docker.sock \
+-v $(which docker):/usr/bin/docker \
+jenkins/jenkins:lts
+```
+2. Install kubectl CMD inside Jenkins container.
+```
+docker exec -it u 0 <id> bash
+
+curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+curl -LO "https://dl.k8s.io/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl.sha256"
+echo "$(<kubectl.sha256) kubectl" | sha256sum --check
+install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl
+
+chmod +x kubectl
+mkdir -p ~/.local/bin/kubectl
+mv ./kubectl ~/.local/bin/kubectl
+
+kubectl version --client
+
+
+
+```
+3. Install aws-iam-authenticator tool inside Jenkins container.
+-- Already installed eksctl
+```
+curl -o aws-iam-authenticator https://amazon-eks.s3.us-west-2.amazonaws.com/1.21.2/2021-07-05/bin/linux/`amd64`/aws-iam-authenticator
+chmod +x ./aws-iam-authenticator
+
+Correct version:
+curl -o aws-iam-authenticator https://amazon-eks.s3-us-west-2.amazonaws.com/1.14.6/2019-08-22/bin/linux/amd64/aws-iam-authenticator
+
+
+mkdir -p $HOME/bin && cp ./aws-iam-authenticator $HOME/bin/aws-iam-authenticator && export PATH=$PATH:$HOME/bin
+echo 'export PATH=$PATH:$HOME/bin' >> ~/.bashrc
+aws-iam-authenticator help
+
+mv ./aws-iam-authenticator /usr/local/bin
+```
+4. Create kubeconfig file to connect to EKS cluster.
+```
+aws eks update-kubeconfig --name demo-cluster
+
+We need to update:
+
+-
+1. k8s cluster name
+2. Server endpoiny 
+3. CA data certificate authority data
+
+Then insider on our jenkins container
+
+cd ~
+pwd
+mkdir .kube
+exit the container
+
+Copy the config in .kube/config
+docker cp config <containerid>:var/jenkins_home/.kube/
+
+Then insider on our jenkins container with jenkins user
+
+
+======
+aws eks update-kubeconfig --name eks-cluster-test
+```
+8. Add AWS credentials on Jenkins for AWS account authentication.
+```
+---
+
+1.Best practice is to create an AWS IAM user for Jenkins
+9. Create credentials inside Jenkins (multibranch pipeline)
+- jenkins-aws_access_key_id
+- jenkins-aws_secret_access_key
+ 
+```
+10. Adjust Jenkinsfile to configure EKS cluster deployment.
+- Configure Jenkinsfile to deploy on EKS
+```
+A. kubectl command
+B. kubeconfig file
+C. aws-iam-authenticator is configured in config file
+D. aws credentials is used. 
+```
+
+`Jenkinsfile`
+```
+#!/usr/bin/env groovy
+
+pipeline {
+    agent any
+    stages {
+        stage('build app') {
+            steps {
+               script {
+                   echo "building the application..."
+               }
+            }
+        }
+        stage('build image') {
+            steps {
+                script {
+                    echo "building the docker image..."
+                }
+            }
+        }
+        stage('deploy') {
+            environment {
+               AWS_ACCESS_KEY_ID = credentials('jenkins_aws_access_key_id')
+               AWS_SECRET_ACCESS_KEY = credentials('jenkins_aws_secret_access_key')
+            }
+            steps {
+                script {
+                   echo 'deploying docker image...'
+                   sh 'kubectl create deployment nginx-deployment --image=nginx'
+                }
+            }
+        }
+    }
+}
+
+```
+11. Execute Jenkins Pipeline
+
+```
+kubectl get pod
+```
+
+So what happened here, instead of your deploying it into EC2 instances, you deploy it via Kubernetes Cluster.
+
+# Credentials in Jenkins
+- You can have EC2 credentials here, so in case you need it for deployment
+- You can have K8s credentials here, so in case you need it for deployment.
+
+# Complete CI/CD Pipeline with EKS and DockerHub 
+# Complete CI/CD Pipeline with EKS and ECR 
