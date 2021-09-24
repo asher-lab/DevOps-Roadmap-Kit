@@ -219,3 +219,107 @@ terraform state show < on list >
 terraform pull
 ```
 Like for example getting the ARN.
+
+# Terraform Output
+- handy if you need the values, no need to show for state list   command.
+```
+provider "aws" {
+	region = "us-east-1"
+	access_key = "ASIARUAMG3TZE2PYYRKL"
+	secret_key = "5jTeRT4TAqMAWiuBnFcpXPbSL94n4gjV0asNL5r3"
+	token="FwoGZXIvYXdzEOj//////////wEaDPuJQhpom3mTndDZzyLJATK2tXT3CyG2ALFoP5ittoxRtAhwbf7Vm6trsI4DYSnR4uNJyMADu33SlgD+YWdg9DabS1fE9+BzNRoYlhwJbG3vKEv0auEd5jJIE14lCGZK2/IX6p2gv1w1FDMtPNBfLPUxlQvhpzcjoT+7pQMhCcqrmwXIBu8Zof08QeBjz0ooUl29Hmexhb3/ci+eNneiRvuInHlhQR4yFcJBFOc55UzBjH4S3PqrV1KyavRbXrHlVZ+rv3u9hAXEaGO0sy5pb0dZ+klLfNygJCjn3rWKBjIt54XOXdY/rr7K8LlJXWlhoO+Vanur1iPKKSOeQA7LUPVsYeFHcBUN3FRRieGr"
+}
+
+
+# resource <aws_what> <name>
+resource "aws_vpc" "development-vpc" {
+    cidr_block = "10.0.0.0/16"
+
+    tags = {
+        Name: "development"
+    }
+}
+
+
+resource "aws_subnet" "dev-subnet-1" {
+    vpc_id = aws_vpc.development-vpc.id # referencing a resource that doesn't exists yet.
+    cidr_block = "10.0.10.0/24"
+    availability_zone = "us-east-1a"
+    tags = {
+        Name: "subnet-1-development",
+        vpc-env: "dev"
+    }
+    
+}
+
+# data lets you query existing resource in AWS in used it as an object
+
+# here we wanted to query the default vpc.
+#
+data "aws_vpc" "existing_vpc" {
+    default=true
+}
+
+resource "aws_subnet" "dev-subnet-2" {
+    vpc_id = data.aws_vpc.existing_vpc.id # referencing a resource that does exists yet.
+    cidr_block = "172.31.80.0/20"
+    availability_zone = "us-east-1a"
+
+    tags = {
+        Name: "subnet-1-default"
+    }
+    
+  
+}
+```
+
+# Variables in Terraform
+- variables here are like function arguments
+- 3 ways of assigning variable:
+- 1. It can be prompted. Especially it is not defined yet.
+- 2. Pass the argument in CLI when doing `terraform apply`
+```
+terraform apply -var "subnet_cidr_block=172.31.80.0/20"
+```
+3. Third method is having a variables file known as `.tfvars` Here you can defined key value pairs
+```
+nano terraform.tfvars
+```
+
+```
+subnet_cidr_block = "172.31.80.0/20"
+```
+- best use case is to have one variables file in different environments.
+- pass none `terraform.tfvars` as `terraform apply -vars-file terraform-dev.tfvars`
+- a default value can be in parameters, if it can't find any custom one.
+- also you can declare `type = string` so it will know what type is needed on that block. (e.g. boolean , string, integer etc. )
+- e.g. `list(string)`
+```
+in tfvars
+cidr_block = ["10.0.20.0/24", "10.0.30.0/24"]
+
+then reference either first or second via simple lists syntax
+var.cidr_block[0] or var.cidr_block[1]
+
+
+can also be:
+type = list(object({
+	cidr_block=string
+	name=string
+	}))
+
+- use case, when team is working, you need to restrict what they are gonna put here.
+
+
+tfvars contains:
+
+cidr_block = [
+	{cidr_block = "10.0.0.0.16", name = "dev-vpc"},
+	{cidr_block = "10.0.18.0/24", name = "dev-subnet"
+]
+
+then reference via:
+
+cidr_block = var.cidr_block[1].cidr_block
+Name: var.cidr_block[1].name
+```
