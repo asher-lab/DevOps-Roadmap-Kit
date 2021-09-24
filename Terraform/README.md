@@ -184,3 +184,38 @@ resource "aws_subnet" "dev-subnet-2" {
 }
 ```
 `terraform apply`
+
+# Change and Destroying TF resources
+`terraform apply`
+`
+'~' is for changing a resource
+'+' is for creating a resource
+'-' is for removing a resource
+
+# Removing a resource.
+1. You can just remove that in tf config then apply. 
+2. `terraform destroy -target aws_subnet.dev-subnet-2` 
+`terraform destroy -target resource.name`
+
+Best practice is: Apply the configuration file, because using destroy, it will still leave you the default config.  Especially when  working in a team
+
+# More terraform commands
+1.  Preview without actually applying it.
+```
+terraform plan
+```
+2. `terraform apply -auto-approve` will apply it without confirmation
+3. `terraform destroy` will remove resources one by one in correct order. Useful to revert back on your initial state. 
+
+# Terraform State
+Is where terraform get all of the data, and historical accounts for it. 
+.tfstate
+.tfstate.backup
+
+Also one can do , `terraform state`
+```
+terraform state list
+terraform state show < on list >
+terraform pull
+```
+Like for example getting the ARN.
