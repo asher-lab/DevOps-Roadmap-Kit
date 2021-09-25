@@ -323,3 +323,63 @@ then reference via:
 cidr_block = var.cidr_block[1].cidr_block
 Name: var.cidr_block[1].name
 ```
+
+
+# Environmental Variables
+- We should not hard code the credentials:
+- Two ways to set the credentials:
+- First One, you can set it as env variables
+```
+export AWS_SECRET_ACCESS_KEY
+export AWS_SECRET_KEY_ID
+export AWS_SESSION_TOKEN
+```
+
+Second way:
+- Problem when you are switch from another terminal, since they are only accessible on context. Else you need to configure it in ls ~/.aws/credentials to become available on all terminal. Terraform can pick this up. It can use the credentials in `.aws/credentials`
+
+Third Way:
+- Reference it via TF_VAR
+```
+export TF_VAR_avail_zone="eu-west-3a"
+
+Here you saying that TF_VAR is what terraform will look up and avail_zone be the one to be used.
+
+
+reference inside tf file
+
+var avail_zone {}
+then
+availability_zone = var.avail_zone
+```
+##### How on earth does using environmental variables makes the credentials safe?
+https://stackoverflow.com/questions/12461484/is-it-secure-to-store-passwords-as-environment-variables-rather-than-as-plain-t
+
+# Creating a Git repo for a Terraform proj
+```
+git init
+git remote add origin https://gitlab.com/asher-lab/terraform-learn.git
+
+# doesnt have to be part of the code
+nano .gitignore
+
+inside:
+----------
+# local .terraform dir
+.terraform/*
+
+#tf state files
+*.tfstate
+*.tfstate.*
+
+#tf vars may inclue senstive info
+*.tfvars
+
+---------
+git add .
+git commit -m "Initial commit"
+git push -u origin master
+git push -u origin main
+```
+
+# Automate Provisioning of EC2 instance with terraform
