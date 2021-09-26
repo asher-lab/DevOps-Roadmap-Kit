@@ -383,3 +383,259 @@ git push -u origin main
 ```
 
 # Automate Provisioning of EC2 instance with terraform
+**Here we:**
+1. Create custom VPC.
+2. Create Custom Subnet in one availability Zone.
+3. Connect this VPC via internet gateway to allow the traffic, by creating route table and internet gateway.
+4. Inside the subnet, we gonna deploy our ec2 instance
+5. Deploy nginx docker container
+6. Create security group (firewall)
+7. We open here port 22 and the nginx docker port. 8080
+
+Best practice: Create entire infrastructure from scratch, leaving the default by AWS.
+
+## Creating our own VPC
+main.tf
+```
+# declare the provider
+provider "aws" {
+	region = "us-east-1"
+}
+
+# Assigning variables
+variable vpc_cidr_block {}
+variable subnet_cidr_block {}
+variable avail_zone {}
+variable env_prefix {}
+
+
+# Creating VPC
+resource "aws_vpc" "myapp-vpc" {
+    cidr_block = var.vpc_cidr_block
+    tags = {
+        Name: "${var.env_prefix}-vpc"
+    }
+}
+
+# Creating subnet
+resource "aws_subnet" "myapp-subnet-1" {
+    vpc_id = aws_vpc.myapp-vpc.id
+    cidr_block = var.subnet_cidr_block
+    availability_zone = var.avail_zone
+    tags = {
+        Name: "${var.env_prefix}-subnet-1"
+    }
+}
+```
+terraform.tfvars
+```
+vpc_cidr_block = "10.0.0.0/16"
+subnet_cidr_block = "10.0.10.0/24"
+avail_zone = "us-east-1a"
+env_prefix = "dev"
+```
+Then perform this command:
+```
+terraform plan
+terraform apply --auto-approve
+```
+- Inspect what has AWS generated for you via VPC.
+- ROUTE TABLE is generated. It is a virtual router in your VPC.  Helps you route subnet. Helps you route multiple VPC. By default it has not igw ( internet gateway as its target )
+- NETWORK ACL is a firewall configuration for our VPC. By default it is open by default.
+- Internet Gateway is your default modem in your VPC that helps you connect to the internet.
+Trivia: Terraform know what sequence is need in order to create the resources. So even you define it at the end, it will still create it.
+```
+# declare the provider
+provider "aws" {
+    region = "us-east-1"
+}
+
+# Assigning variables
+variable vpc_cidr_block {}
+variable subnet_cidr_block {}
+variable avail_zone {}
+variable env_prefix {}
+
+
+# Creating VPC
+resource "aws_vpc" "myapp-vpc" {
+    cidr_block = var.vpc_cidr_block
+    tags = {
+        Name: "${var.env_prefix}-vpc"
+    }
+}
+
+# Creating subnet
+resource "aws_subnet" "myapp-subnet-1" {
+    vpc_id = aws_vpc.myapp-vpc.id
+    cidr_block = var.subnet_cidr_block
+    availability_zone = var.avail_zone
+    tags = {
+        Name: "${var.env_prefix}-subnet-1"
+    }
+}
+
+# Create route table with rule for igw
+resource "aws_route_table" "myapp-route-table" {
+    vpc_id = aws_vpc.myapp-vpc.id
+    route {
+        cidr_block = "0.0.0.0/0"
+        gateway_id = aws_internet_gateway.myapp-igw.id
+    }
+    
+    tags = {
+        Name: "${var.env_prefix}-rtb"
+    }
+}
+
+# Create Internet gateway
+resource "aws_internet_gateway" "myapp-igw" {
+    vpc_id = aws_vpc.myapp-vpc.id
+
+    tags = {
+        Name: "${var.env_prefix}-igw"
+    }
+}
+
+```
+Then perform this command:
+
+```
+terraform plan
+terraform apply --auto-approve
+```
+
+##### Best practice: Custom Subnet Association with our route table
+```
+# Associating a subnet to our route table
+resource "aws_route_table_association" "a-rtb-subnet" {
+    subnet_id =  aws_subnet.myapp-subnet-1.id
+    route_table_id = aws_route_table.myapp-route-table.id
+}
+```
+#### Default Subnet Association with our route table (optional)
+```
+Get the data by typing the following cmd:
+
+terraform state show aws_vpc.myapp-vpc
+```
+```
+# Associating it to default rtb
+resource "aws_default_route_table" "main-rtb" {
+	default_route_table_id = aws_vpc.myapp-vpc.default_route_table_id
+	 route {
+        cidr_block = "0.0.0.0/0"
+        gateway_id = aws_internet_gateway.myapp-igw.id
+    }
+    
+    tags = {
+        Name: "${var.env_prefix}-main-rtb"
+    }
+}
+```
+
+#### Creating Security Group
+```
+# declare the provider
+provider "aws" {
+    region = "us-east-1"
+}
+
+# Assigning variables
+variable vpc_cidr_block {}
+variable subnet_cidr_block {}
+variable avail_zone {}
+variable env_prefix {}
+
+
+# Creating VPC
+resource "aws_vpc" "myapp-vpc" {
+    cidr_block = var.vpc_cidr_block
+    tags = {
+        Name: "${var.env_prefix}-vpc"
+    }
+}
+
+# Creating subnet
+resource "aws_subnet" "myapp-subnet-1" {
+    vpc_id = aws_vpc.myapp-vpc.id
+    cidr_block = var.subnet_cidr_block
+    availability_zone = var.avail_zone
+    tags = {
+        Name: "${var.env_prefix}-subnet-1"
+    }
+}
+
+# Create route table with rule for igw
+resource "aws_route_table" "myapp-route-table" {
+    vpc_id = aws_vpc.myapp-vpc.id
+    route {
+        cidr_block = "0.0.0.0/0"
+        gateway_id = aws_internet_gateway.myapp-igw.id
+    }
+    
+    tags = {
+        Name: "${var.env_prefix}-rtb"
+    }
+}
+
+# Create Internet gateway
+resource "aws_internet_gateway" "myapp-igw" {
+    vpc_id = aws_vpc.myapp-vpc.id
+
+    tags = {
+        Name: "${var.env_prefix}-igw"
+    }
+}
+
+# Associating a subnet to our route table
+resource "aws_route_table_association" "a-rtb-subnet" {
+    subnet_id =  aws_subnet.myapp-subnet-1.id
+    route_table_id = aws_route_table.myapp-route-table.id
+}
+
+
+# Creating security group
+resource "aws_security_group" "myapp-sg" {
+    name = "myapp-sg"
+    vpc_id = aws_vpc.myapp-vpc.id
+
+    # incoming traffic rules
+    ingress {
+        from_port = 22
+        to_port = 22
+        protocol = "tcp"
+        # who can access these ports:
+        cidr_blocks = ["0.0.0.0/0"]
+    }
+
+    ingress {
+        from_port = 8080
+        to_port = 8080
+        protocol = "tcp"
+        # who can access these ports:
+        cidr_blocks = ["0.0.0.0/0"]
+    }
+
+
+    # outgoing traffic rules , like fecthing data from internet.
+    egress {
+        from_port = 0
+        to_port = 0
+        protocol = "-1"
+        # who can access these ports:
+        cidr_blocks = ["0.0.0.0/0"]
+        prefix_list_ids = []
+    }
+
+    tags = {
+        Name: "${var.env_prefix}-sg"
+    }
+}
+```
+Then perform this command:
+
+```
+terraform plan
+terraform apply --auto-approve
+```
