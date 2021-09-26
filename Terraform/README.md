@@ -433,6 +433,7 @@ vpc_cidr_block = "10.0.0.0/16"
 subnet_cidr_block = "10.0.10.0/24"
 avail_zone = "us-east-1a"
 env_prefix = "dev"
+instance_type = "m5.large"
 ```
 Then perform this command:
 ```
@@ -639,3 +640,191 @@ Then perform this command:
 terraform plan
 terraform apply --auto-approve
 ```
+## Creating an AWS EC2 instance
+```
+# declare the provider
+provider "aws" {
+    region = "us-east-1"
+}
+
+# Assigning variables
+variable vpc_cidr_block {}
+variable subnet_cidr_block {}
+variable avail_zone {}
+variable env_prefix {}
+variable instance_type {}
+
+# Creating VPC
+resource "aws_vpc" "myapp-vpc" {
+    cidr_block = var.vpc_cidr_block
+    tags = {
+        Name: "${var.env_prefix}-vpc"
+    }
+}
+
+# Creating subnet
+resource "aws_subnet" "myapp-subnet-1" {
+    vpc_id = aws_vpc.myapp-vpc.id
+    cidr_block = var.subnet_cidr_block
+    availability_zone = var.avail_zone
+    tags = {
+        Name: "${var.env_prefix}-subnet-1"
+    }
+}
+
+# Create route table with rule for igw
+resource "aws_route_table" "myapp-route-table" {
+    vpc_id = aws_vpc.myapp-vpc.id
+    route {
+        cidr_block = "0.0.0.0/0"
+        gateway_id = aws_internet_gateway.myapp-igw.id
+    }
+    
+    tags = {
+        Name: "${var.env_prefix}-rtb"
+    }
+}
+
+# Create Internet gateway
+resource "aws_internet_gateway" "myapp-igw" {
+    vpc_id = aws_vpc.myapp-vpc.id
+
+    tags = {
+        Name: "${var.env_prefix}-igw"
+    }
+}
+
+# Associating a subnet to our route table
+resource "aws_route_table_association" "a-rtb-subnet" {
+    subnet_id =  aws_subnet.myapp-subnet-1.id
+    route_table_id = aws_route_table.myapp-route-table.id
+}
+
+
+# Creating security group
+resource "aws_security_group" "myapp-sg" {
+    name = "myapp-sg"
+    vpc_id = aws_vpc.myapp-vpc.id
+
+    # incoming traffic rules
+    ingress {
+        from_port = 22
+        to_port = 22
+        protocol = "tcp"
+        # who can access these ports:
+        cidr_blocks = ["0.0.0.0/0"]
+    }
+
+    ingress {
+        from_port = 8080
+        to_port = 8080
+        protocol = "tcp"
+        # who can access these ports:
+        cidr_blocks = ["0.0.0.0/0"]
+    }
+
+
+    # outgoing traffic rules , like fecthing data from internet.
+    egress {
+        from_port = 0
+        to_port = 0
+        protocol = "-1"
+        # who can access these ports:
+        cidr_blocks = ["0.0.0.0/0"]
+        prefix_list_ids = []
+    }
+
+    tags = {
+        Name: "${var.env_prefix}-sg"
+    }
+}
+
+# fetch ami ID from aws_vpc
+data "aws_ami" "latest-amazon-linux-image" {
+    most_recent = true
+    owners = ["amazon"]
+    filter {
+        name = "name"
+        values = ["amzn2-ami-hvm-*-x86_64-gp2"]
+    }
+
+    filter {
+    name   = "virtualization-type"
+    values = ["hvm"]
+    }
+
+
+}
+
+output "aws_ami_id" {
+  value = data.aws_ami.latest-amazon-linux-image.id
+}
+
+output "ec2_public_ip" {
+    value = aws_instance.myapp-server.public_ip
+}
+
+
+# Creating AWS EC2 instance
+resource "aws_instance" "myapp-server" {
+    ami = data.aws_ami.latest-amazon-linux-image.id
+    instance_type = var.instance_type
+
+    # getting the ec2 associated with the vpc, subnetid, aws_security_group
+    subnet_id = aws_subnet.myapp-subnet-1.id
+    vpc_security_group_ids = [aws_security_group.myapp-sg.id]
+    availability_zone = var.avail_zone
+
+    # associate public ip address
+    associate_public_ip_address = true
+
+    # create a key pair and associate
+    key_name = "tutorialTF"
+
+    tags = {
+        Name = "${var.env_prefix}-server"
+    }
+
+}    
+ 
+# creating key pair ? best practice 
+
+/*
+resource "aws_key_pair" "ssh-key" {
+    key_name = "server-key"
+    # public_key = "ssh-rsa Asassd asa@gmaias.vom"
+    # public_key = var.my_public_ip
+    # public_key = "${file(var.publick_key_location)}""
+}*/
+```
+Then perform this command:
+
+```
+terraform plan
+terraform apply --auto-approve
+```
+#### Automating SSH key pair assoc.
+```
+ssh-keygen
+ls .ssh/id_rsa
+then get the id_rsa.pub locally
+cat .ssh/id_rsa.pub
+
+then paste it terraform
+```
+the private key there is `id_rsa` located with .ssh/id_rsa
+- meaning you can associate an existing private key on your instance
+
+ssh -i ~/.ssh/id_rsa ec2-user@ip
+```
+/*
+resource "aws_key_pair" "ssh-key" {
+    key_name = "server-key"
+    # public_key = "ssh-rsa Asassd asa@gmaias.vom"
+    # public_key = var.my_public_ip
+    # public_key = "${file(var.publick_key_location)}""
+}*/
+```
+- If you change the key, it will create a new resource.
+- Terraform is useful when you are destroying / clean up
+- Terraform replication of environment. From staging to deployment
