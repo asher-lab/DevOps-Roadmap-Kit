@@ -1355,10 +1355,10 @@ variable public_subnet_cidr_blocks {}
 #data definition
 # querying data
 
-data "aws_availabiliy_zones" "azs" {}
+data "aws_availability_zones" "azs" {}
 
 
-module "vpc" {
+module "myapp-vpc" {
   source  = "terraform-aws-modules/vpc/aws"
   version = "3.7.0"
   # insert the 21 required variables here
@@ -1376,7 +1376,7 @@ module "vpc" {
   public_subnets = var.public_subnet_cidr_blocks
 
   #deploy subnets in all availability zones
-  azs = data.aws_availabiliy_zones.azs.names
+  azs = data.aws_availability_zones.azs.names
 
   enable_nat_gateway = true
 
@@ -1397,21 +1397,21 @@ module "vpc" {
 
 
   # tagging vpc
-  tags {
+  tags = {
     "kubernetes.io/cluster/myapp-eks-cluster" = "shared"
   }
 
   # tagging public subnets
-  public_subnet_tags {
-    "kubernetes.io/cluster/myapp-eks-cluster" = "shared"
-    "kubernetes.io/role/elb" = 1 
-  }
+ public_subnet_tags = {
+ "kubernetes.io/cluster/myapp-eks-cluster" = "shared"
+ "kubernetes.io/role/elb" = 1 
+ }
 
   # tagging private subnets
-  private_subnet_tags {
-    "kubernetes.io/cluster/myapp-eks-cluster" = "shared"
-    "kubernetes.io/role/internal-elb" = 1 
-  }
+  private_subnet_tags = {
+ "kubernetes.io/cluster/myapp-eks-cluster" = "shared"
+ "kubernetes.io/role/internal-elb" = 1 
+ }
 
 
 
@@ -1423,3 +1423,261 @@ Then perform
 terraform init
 terraform plan
 ```
+On plan you can see: ( we already created the vpc )
+- Elastic IP address
+- Internet Gateway
+- NAT Gateway
+- RTB
+- Private and Public Subnet
+
+# Terraform and EKS - Part II
+https://registry.terraform.io/modules/terraform-aws-modules/eks/aws/latest
+<br>
+
+eks-cluster.tf
+```
+module "eks" {
+  source  = "terraform-aws-modules/eks/aws"
+  version = "17.20.0"
+  # insert the 7 required variables here
+
+  cluster_name = "myapp-eks-cluster"
+  cluster_version = "1.17"
+
+  # provide a vpc id
+  vpc_id = module.myapp-vpc.vpc_id
+
+  # list of subnets we want worker node to start in
+  # Private: workload to be scheduled
+  # Public: Loadbalancer, etc.
+  # reference an attribute created by module
+  # this is where worker nodes where run:
+  subnets = module.myapp-vpc.private_subnets
+
+  tags = {
+    environment = "development"
+    application = "myapp"
+  }
+
+  # worker nodes: we can have:
+  # we can have self managed (ec2), semi managed (node group) and managed (fargate)
+
+  # defining worker groups
+  # these are self managed
+  worker_groups = [
+      {
+        instance_type =  "m5.large"
+        name = "worker-group-1"
+        asg_desired_capacity = 2
+      },
+
+      {
+        instance_type =  "t2.micro"
+        name = "worker-group-2"
+        asg_desired_capacity = 1
+      }
+
+
+  ]
+
+
+
+}
+```
+
+^^ not yet finished
+- https://registry.terraform.io/providers/hashicorp/kubernetes/latest/docs
+- Now we configure kubernetes provider with basic auth:
+```
+# defining kubernetes provider
+# this is important so that Terraform can access the cluster on the creds that are defined.
+provider "kubernetes" {
+  # load_config_file = "false"
+  # enpoint of K8s cluster
+  host = data.aws_eks_cluster.myapp-cluster.endpoint
+  token = data.aws_eks_cluster_auth.myapp-cluster.token
+  cluster_ca_certificate = base64decode(data.aws_eks_cluster.myapp-cluster.certificate_authority.0.data)
+}
+
+
+
+# ---------- Defining Data -------------#
+data "aws_eks_cluster" "myapp-cluster" {
+  name =  module.eks.cluster_id
+}
+
+data "aws_eks_cluster_auth" "myapp-cluster" {
+  name = module.eks.cluster_id
+}
+
+
+
+module "eks" {
+  source  = "terraform-aws-modules/eks/aws"
+  version = "17.20.0"
+  # insert the 7 required variables here
+
+  cluster_name = "myapp-eks-cluster"
+  cluster_version = "1.17"
+
+  # provide a vpc id
+  vpc_id = module.myapp-vpc.vpc_id
+
+  # list of subnets we want worker node to start in
+  # Private: workload to be scheduled
+  # Public: Loadbalancer, etc.
+  # reference an attribute created by module
+  # this is where worker nodes where run:
+  subnets = module.myapp-vpc.private_subnets
+
+  tags = {
+    environment = "development"
+    application = "myapp"
+  }
+
+  # worker nodes: we can have:
+  # we can have self managed (ec2), semi managed (node group) and managed (fargate)
+
+  # defining worker groups
+  # these are self managed
+  worker_groups = [
+      {
+        instance_type =  "m5.large"
+        name = "worker-group-1"
+        asg_desired_capacity = 2
+      },
+
+      {
+        instance_type =  "t2.micro"
+        name = "worker-group-2"
+        asg_desired_capacity = 1
+      }
+
+
+  ]
+
+
+
+}
+```
+Then we perform:
+```
+terraform init
+tree .terraform
+terraform apply --auto-approve
+
+
+Adding my repo to gitlab
+git remote add origin https://gitlab.com/asher-lab/terraform-learn.git
+git add .
+git commit -m "eks"
+git push -u origin feature/eks
+```
+
+
+# Terraform and EKS - Part III
+```
+Apply complete! Resources: 47 added, 0 changed, 0 destroyed.
+```
+Now we have created our cluster in a long time ( 15 minutes )
+- Try navigating the UI on AWS. To explore EKS, IAM Roles, EC2
+- You will see the IAM roles starting with "myapp"
+- Also the EC2 instance that are created.
+- As well as the EKS.
+- and VPC created. ( RTB and Subnets ) 6 different subnets. 3 PRI and 3 PUB
+- NAT allows two private networks to talk with each other.
+
+You can see in the subnets:
+- Private ones are associated with the NAT
+- Public ones are associated with the IGW
+
+You may also check the SG ( there are 4 SG created, but we need only the 3 not the 1st default )
+- Why there are a lot of  SG? These are the rules from VPC for master nodes and VPC for worker nodes.
+
+# Connect via Kubectl and Deploy app into our cluster using nginx
+```
+aws eks update-kubeconfig --name myapp-eks-cluster --region us-east-1
+kubectl get node
+kubectl get pod
+
+kubectl apply -f nginx-config.yaml
+kubectl get pod
+kubectl get svc
+```
+```
+nginx-config.yaml
+```
+```
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nginx
+spec:
+  selector:
+    matchLabels:
+      app: nginx
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: nginx
+    spec:
+      containers:
+      - name: nginx
+        image: nginx
+        ports:
+        - containerPort: 80
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: nginx
+  labels:
+    app: nginx
+spec:
+  ports:
+  - name: http
+    port: 80
+    protocol: TCP
+    targetPort: 80
+  selector:
+    app: nginx
+  type: LoadBalancer
+```
+
+
+Try to explore:
+- LoadBalancers in AWS console under EC2
+- You can see that the LBs are available on all three AZ which is HA.
+- Also remember again that you have Private subnet in Workloads.
+- And Public subnets in Load Balancer.
+```
+DNS name
+
+ae6c5d3ceb6d14eb5b908175e870a995-2112134102.us-east-1.elb.amazonaws.com (A Record)
+```
+```
+# Welcome to nginx!
+
+If you see this page, the nginx web server is successfully installed and working. Further configuration is required.
+
+For online documentation and support please refer to  [nginx.org](http://nginx.org/).  
+Commercial support is available at  [nginx.com](http://nginx.com/).
+
+_Thank you for using nginx._
+```
+```
+Port Configuration
+
+80 (TCP) forwarding to 30430 (TCP)
+```
+
+#### Destroying all we have made
+```
+terraform state list
+terraform destroy --auto-approve
+terraform state list
+```
+The best part of learning TF is:
+- You just need to think hard on an architecture.
+- And after that, it is easily replicable and can easily be destroyed. A good investment in time.
