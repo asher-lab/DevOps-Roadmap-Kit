@@ -1681,3 +1681,47 @@ terraform state list
 The best part of learning TF is:
 - You just need to think hard on an architecture.
 - And after that, it is easily replicable and can easily be destroyed. A good investment in time.
+
+
+# CI/CD with TF - Part One, two and three
+
+```
+Build Image > Build Images And Push to Docker Repo > Provision Server (Terraform ) > Deploy to EC2 Instance
+```
+#### What are we gonna do:
+- Integrating TF in our pipeline
+- Previous: Build Docker Image and deployed to existing server.
+- Now: automate provisioning of servers.
+
+I skip this.
+
+# Remote State in Terraform
+Problem: There are cases where a team needs to work on the latest / same version of TF code.
+#### How do we share a same Terraform state file?
+Answer: Remote State
+- data backup 
+- can be shared
+- keep sensitive data off disk
+
+
+This will update tfstate in s3 everytime.
+```
+terraform {
+	required_version = ">=0.12"
+	backend = "s3" {
+		bucket = "myapp-bucket"
+		key = "myapp/state.tfstate"
+		region = "us-east-1"
+	}
+}
+```
+1. Create AWS bucket.
+2. Execute Jenkins Pipeline
+3. Check Logs in Pipeline
+
+
+What are TF remote state for?
+
+
+**Terraform** stores information about your infrastructure in a state file. This state file keeps track of resources created by your configuration and maps them to real-world resources.
+
