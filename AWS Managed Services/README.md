@@ -57,6 +57,75 @@ user:password
 
  #  WordPress and GitHub Integration – Live and Local Environment
   #  AWS Codepipeline | CI CD for wordpress
- # Integrating Lightsail instance (WP)  to LoadBalancers
+  
+ # Lightsail instance (WP)  to LoadBalancers
+ LB - cost 18 usd a month.
+ **Hmmm.. How can we automate this, auto add or stop , remove instances**
+ Goal: Adding LoadBalancers to instances.
+  On this example, we perform:
+- There is the same instance and content on each instance ( wordpress ).
+- Domain name pointing to Load Balancer.
+- Updating DNS and Doing HTTPS certificate on LB, since it is required.
+- Instance be deployed in different AZ.
+- Importance: You can upgrade and take down one instance, LB will still take care of it. **Detached.**
+
+###  A.  Important that your instanceS be connected on the Database.
+  1. Connect to instance.
+  2. In WP settings, check wp-config.php
+```
+Enter the db password that was assigned to LS.
+/** MYSQL database password **/
+/** MYSQL database user **/
+/** MYSQL database name**/
+/** MYSQL database hostname / aka endpoint **/
+```
+**- This is important, so when you spin up a new instance then they are pointing out to the same instances. ( same wp-config.php )**
+
+### B. Setting up DNS 
+1. Create a DNS zone.
+```
+Enter the domain name
+```
+2. Copy the NS from AWS, then copy it on godaddy, namecheap or route 53.
+3. Check for DNS propagation
+### C. Setting up the Certificate
+1. Go to networking tab in AWS.
+2. Under dns zone. Add A record. 
+```
+A record
+@
+Resolves to LoadBalancer
+
+A record
+www
+Resolves to LoadBalancer
+```
+3. Set certificate to route traffic from LB to Instances
+
+```
+= Go to Networking Tab 
+= Manage Load Balancer
+= Route Inbound Traffic both HTTP and HTTPS
+Understand that:
+- Traffic from viewer to LB is HTTPS. Encrypted.
+- Traffic from LB to instances is HTTP. Since it is internal and there is no public traffic
+= Create a certificate. Create
+= Networking Tab. Then Manage DNS zone for domain, then create C record. ( C record is given when you create a certificate ) , can took 5 minutes to do it. 
+```
+### D. Attaching and Detaching from LB
+### E. Snapshots
+1. Go to One instance.
+2. Manage snapshots on an instance.
+3. Create a new instance of that snapshot.
+4. Now it is completely up and running!!!
+
+
+**LB will know if it full, because we have metrics**
+5. Load Balancer, then attached on the LB.
+
+Useful Links: In enabling HTTPS
+ - https://lightsail.aws.amazon.com/ls/docs/en_us/articles/understanding-tls-ssl-certificates-in-lightsail-https
+ - https://lightsail.aws.amazon.com/ls/docs/en_us/articles/amazon-lightsail-create-a-distribution-certificate
+
  # Integrating Lightsail instance (WP) to Aurora Database
  # Integrating Lightsail to Git
