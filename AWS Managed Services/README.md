@@ -56,6 +56,33 @@ user:password
 ```
 
  #  WordPress and GitHub Integration – Live and Local Environment
+
+```
+git init
+git remote add origin https://gitlab.com/asher-lab/wordpress.git
+
+# doesnt have to be part of the code
+nano .gitignore
+
+inside:
+----------
+# local .terraform dir
+.terraform/*
+
+#tf state files
+*.tfstate
+*.tfstate.*
+
+#tf vars may inclue senstive info
+*.tfvars
+
+---------
+git add .
+git commit -m "Initial commit"
+git push -u origin master
+git push -u origin main
+```
+2. Risk, for number 1 is, if there are credentials inside that will be stored. Apart from WP folder. Number 2 with snapshots is much better.
   #  AWS Codepipeline | CI CD for wordpress
   
  # Lightsail instance (WP)  to LoadBalancers
