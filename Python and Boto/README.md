@@ -401,3 +401,18 @@ schedule.every(1).seconds.do(check_instance_status)
 while True:
 	schedule.run_pending()
 ```
+
+**These are the things that can be done easily:**
+```
+7 - Configure Server: Add Environment Tags to EC2 Instances 
+8 - EKS cluster information 
+9 - Backup EC2 Volumes: Automate creating Snapshots 
+10 - Automate cleanup of old Snapshots 
+11 - Automate restoring EC2 Volume from the Backup 
+12 - Handling Errors
+13 - Website Monitoring 1: Scheduled Task to Monitor Application Health
+14 - Website Monitoring 2: Automated Email Notification 
+15 - Website Monitoring 3: Restart Application and Reboot Server
+```
+
+So I decided not to pursue with the remaining errors since I understand how will they do.
