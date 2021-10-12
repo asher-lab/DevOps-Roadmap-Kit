@@ -364,3 +364,40 @@ for status in statuses['InstanceStatuses']:
 	sys_status = status["SystemStatus"]["Status"]
 	print(f"Instance {status['InstanceId']} {ins_status} and system status is {sys_status}")
 ```
+
+
+# Write a Scheduled Task in Python 
+Goal: Perform EC2 checks every five minutes. 
+
+```
+pip3 install schedule
+```
+
+```
+import boto3 
+import schedule 
+
+ec2_client = boto3.client('ec2', region_name="us-east-1")
+ec2_resource = boto3.resource('ec2', region_name="us-east-1")
+
+reservations = ec2_client.describe_instances()
+#print(reservations)
+print("\n")
+for reservation in reservations['Reservations']:
+	instances = reservation['Instances']
+	for instance in instances:
+		print(f"Status of instance: {instance['InstanceId']} is {instance['State']}")
+
+def check_instance_status():
+	# ----- Print EC2 Status Checks ---- #
+	statuses  =  ec2_client.describe_instance_status()
+	for status in statuses['InstanceStatuses']:
+		ins_status = status["InstanceStatus"]["Status"]
+		sys_status = status["SystemStatus"]["Status"]
+		print(f"Instance {status['InstanceId']} {ins_status} and system status is {sys_status}")
+		
+schedule.every(1).seconds.do(check_instance_status)
+
+while True:
+	schedule.run_pending()
+```
