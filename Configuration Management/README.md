@@ -120,3 +120,52 @@ ansible_ssh_private_key_file=.ssh/priv_key
 ansible_user=ubuntu
 
 ``` 
+
+### Managing Host Key Checking
+- We need to remove the interactivity like, " Do you accept the fingerprint?" 
+- Workaround is we need to add this into known hosts. .ssh/known_hosts/
+- The we perform: `ansible aws -i hosts -m ping`
+
+### Introduction to Ansible playbooks
+Here, we are going to have a 'PLAY'
+
+`nano my-playbook.yaml`
+```
+---
+- name: Configure nginx web server
+  become: true
+  become_user: root
+  become_method: sudo
+  hosts: webserver
+  tasks:
+  - name: install nginx server
+    apt:
+      name: nginx
+      state: latest
+
+  - name: start nginx server
+    service:
+       name: nginx
+       state: started
+
+```
+`nano ansible.cfg`
+```
+[defaults]
+host_key_checking = False
+```
+`nano hosts`
+```
+
+[webserver]
+3.92.231.162
+54.163.96.177
+3.87.184.141
+[webserver:vars]
+ansible_ssh_private_key_file=.ssh/priv_key
+ansible_user=ubuntu
+
+
+```
+Then we perform:
+`ansible-playbook -i hosts my-playbook.yaml`
