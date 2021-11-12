@@ -1,0 +1,8 @@
+apiVersion: v1
+data:
+  azurestorageaccountname: {{ .Values.custom.secrets.azurestorageaccountname }}
+  azurestorageaccountkey: {{ .Values.custom.secrets.azureStorageAccountKey }}
+kind: Secret
+metadata:
+  name: {{ printf "%s-secret-%s" .Values.custom.project .Values.custom.env }}
+type: Opaque

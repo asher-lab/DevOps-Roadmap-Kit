@@ -1,0 +1,13 @@
+# Override JDBC URL
+jdbcUrlOverride: "jdbc:postgresql://myPostgress/myDatabase;socketTimeout=1500"
+  jdbcUrl:
+  jdbcUsername:
+  jdbcPassword:
+
+
+
+account:
+  adminPassword: devopsphadmin
+  currentAdminPassword: admin
+curlContainerImage: curlimages/curl:latest
+adminJobAnnotations: {}

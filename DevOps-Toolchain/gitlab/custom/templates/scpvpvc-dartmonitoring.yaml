@@ -1,0 +1,50 @@
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: {{ printf "%s-sc-%s" .Values.custom.project .Values.custom.env }}
+provisioner: file.csi.azure.com
+allowVolumeExpansion: true
+parameters:
+  skuName: Standard_LRS
+  storageAccount: {{ printf "dartmonitoringstorage%s" .Values.custom.env }}
+  secretName: {{ printf "%s-secret-%s" .Values.custom.project .Values.custom.env }}
+  secretNamespace: dart-monitoring
+  server: dartmonitoringstoragedev.file.core.windows.net/dart-monitoring-fileshares-dev
+  shareName: {{ printf "%s-fileshares-%s" .Values.custom.project .Values.custom.env }}
+reclaimPolicy: Retain
+volumeBindingMode: Immediate
+
+---
+
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: {{ printf "%s-pv-%s" .Values.custom.project .Values.custom.env }}
+spec:
+  accessModes:
+  - {{ .Values.custom.accessModes }}
+  capacity:
+    storage: {{ .Values.custom.storage }}
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: {{ printf "%s-sc-%s" .Values.custom.project .Values.custom.env }}
+  volumeMode: Filesystem  
+  azureFile:
+    secretName: {{ printf "%s-secret-%s" .Values.custom.project .Values.custom.env }}
+    secretNamespace: {{ .Values.custom.namespace }}
+    shareName: {{ printf "%s-fileshares-%s" .Values.custom.project .Values.custom.env }}
+    readOnly: false
+
+---
+
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ printf "%s-pvc-%s" .Values.custom.project .Values.custom.env }}
+spec:
+  accessModes:
+  - {{ .Values.custom.accessModes }}
+  resources:
+    requests:
+      storage: {{ .Values.custom.storage }}
+  storageClassName: {{ printf "%s-sc-%s" .Values.custom.project .Values.custom.env }}
+  volumeName: {{ printf "%s-pv-%s" .Values.custom.project .Values.custom.env }} # Persistent Volume Mapping
